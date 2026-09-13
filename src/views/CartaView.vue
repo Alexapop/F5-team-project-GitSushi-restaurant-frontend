@@ -1,4 +1,6 @@
 <template>
+  <Hero />
+  
   <main class="carta-view">
     <h1 class="carta-view__title">Nuestra carta</h1>
 
@@ -34,6 +36,7 @@ import { onMounted } from 'vue'
 import { useProducts } from '../composables/useProducts'
 import ProductCard from '../components/ProductCard.vue'
 import PaginationControl from '../components/PaginationControl.vue'
+import Hero from '../components/Hero.vue'
 
 const { products, isLoading, error, currentPage, totalPages, fetchProducts, goToPage } = useProducts()
 
