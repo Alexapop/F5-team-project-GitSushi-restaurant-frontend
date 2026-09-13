@@ -1,11 +1,16 @@
 <script setup>
-import CartSummary from '../components/CartSummary.vue'
+import CartSummary from "../components/CartSummary.vue";
+import ChannelSelector from "../components/ChannelSelector.vue";
 </script>
 
 <template>
   <main class="cesta-view">
     <h1 class="cesta-view__title">Tu cesta</h1>
-    <CartSummary />
+
+    <div class="cesta-view__content">
+      <CartSummary />
+      <ChannelSelector />
+    </div>
   </main>
 </template>
 
@@ -18,5 +23,10 @@ import CartSummary from '../components/CartSummary.vue'
 
 .cesta-view__title {
   @apply text-2xl font-heading mb-6;
+
+}
+
+.cesta-view__content {
+  @apply flex flex-col gap-6;
 }
 </style>
