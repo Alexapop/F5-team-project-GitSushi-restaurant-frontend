@@ -5,7 +5,9 @@
     <h1 class="carta-view__title">Nuestra carta</h1>
 
     <p v-if="isLoading" class="carta-view__status">Cargando la carta...</p>
-    <p v-else-if="error" class="carta-view__status carta-view__status--error">{{ error }}</p>
+    <p v-else-if="error" class="carta-view__status carta-view__status--error">
+      {{ error }}
+    </p>
 
     <template v-else>
       <p v-if="products.length === 0" class="carta-view__status">
@@ -32,20 +34,33 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
-import { useProducts } from '../composables/useProducts'
-import ProductCard from '../components/ProductCard.vue'
-import PaginationControl from '../components/PaginationControl.vue'
-import Hero from '../components/Hero.vue'
+import { onMounted } from "vue";
+import { useProducts } from "../composables/useProducts";
+import { useCartStore } from "../stores/cart";
+import ProductCard from "../components/ProductCard.vue";
+import PaginationControl from "../components/PaginationControl.vue";
+import Hero from "../components/Hero.vue";
 
-const { products, isLoading, error, currentPage, totalPages, fetchProducts, goToPage } = useProducts()
+const {
+  products,
+  isLoading,
+  error,
+  currentPage,
+  totalPages,
+  fetchProducts,
+  goToPage,
+} = useProducts();
+const cartStore = useCartStore();
 
 onMounted(() => {
-  fetchProducts(1)
-})
+  fetchProducts(1);
+});
 
-function handleAddToCart(payload) {
-  console.log('[CartaView] add-to-cart', payload)
+function handleAddToCart({ product, quantity }) {
+  cartStore.addProduct(product);
+  for (let i = 1; i < quantity; i++) {
+    cartStore.incrementQuantity(product.id);
+  }
 }
 </script>
 
