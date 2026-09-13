@@ -1,6 +1,6 @@
 <template>
   <Hero />
-  
+
   <main class="carta-view">
     <h1 class="carta-view__title">Nuestra carta</h1>
 
@@ -61,7 +61,7 @@ function handleAddToCart(payload) {
 }
 
 .carta-view__status {
-  @apply text-center text-text py-12;
+  @apply text-center text-on-surface-variant py-12;
 }
 
 .carta-view__status--error {
