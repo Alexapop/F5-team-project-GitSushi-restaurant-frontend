@@ -47,11 +47,11 @@ defineEmits(['change-page'])
 }
 
 .pagination-control__button {
-  @apply px-4 py-2 rounded-lg border border-border bg-bg text-text transition-colors;
-  @apply hover:bg-accent-bg disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-bg;
+  @apply px-4 py-2 rounded-lg border border-outline-variant bg-surface text-on-surface-variant transition-colors;
+  @apply hover:bg-primary-container disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-surface;
 }
 
 .pagination-control__status {
-  @apply text-sm text-text;
+  @apply text-sm text-on-surface-variant;
 }
 </style>
