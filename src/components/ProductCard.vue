@@ -88,7 +88,7 @@ function handleAddToCart() {
 <style scoped>
 @reference "../style.css";
 .product-card {
-  @apply flex flex-col overflow-hidden rounded-lg border border-border bg-bg text-left shadow-sm transition-shadow hover:shadow-md;
+  @apply flex flex-col overflow-hidden rounded-lg border border-outline-variant bg-surface text-left shadow-sm transition-shadow hover:shadow-md;
 }
 .product-card__image {
   @apply h-40 w-full object-cover;
@@ -97,27 +97,27 @@ function handleAddToCart() {
   @apply flex flex-1 flex-col gap-2 p-4;
 }
 .product-card__title {
-  @apply font-heading text-lg font-medium text-text-h;
+  @apply font-heading text-lg font-medium text-on-surface;
 }
 .product-card__description {
-  @apply flex-1 text-sm text-text;
+  @apply flex-1 text-sm text-on-surface-variant;
 }
 .product-card__price {
-  @apply font-heading text-base font-semibold text-accent;
+  @apply font-heading text-base font-semibold text-primary;
 }
 .product-card__footer {
   @apply mt-2 flex items-center justify-between gap-2;
 }
 .product-card__quantity {
-  @apply flex items-center gap-2 rounded-full border border-border px-2 py-1;
+  @apply flex items-center gap-2 rounded-full border border-outline-variant px-2 py-1;
 }
 .product-card__quantity-btn {
-  @apply flex h-6 w-6 items-center justify-center rounded-full text-text-h transition-colors hover:bg-accent-bg disabled:cursor-not-allowed disabled:opacity-40;
+  @apply flex h-6 w-6 items-center justify-center rounded-full text-on-surface transition-colors hover:bg-primary-container disabled:cursor-not-allowed disabled:opacity-40;
 }
 .product-card__quantity-value {
   @apply w-4 text-center text-sm;
 }
 .product-card__add-btn {
-  @apply rounded-full bg-accent px-4 py-1.5 text-sm font-medium text-white transition-colors hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+  @apply rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-on-primary transition-colors hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary;
 }
 </style>
