@@ -1,20 +1,26 @@
 <script setup>
 import { ref } from 'vue'
 import { useCartStore } from '../stores/cart'
+import { useAuthStore } from '../stores/auth'
 import logo from '../assets/logo.png'
 
 const cartStore = useCartStore()
+const authStore = useAuthStore()
 const isMenuOpen = ref(false)
 
 const navLinks = [
-  { to: { name: 'carta' }, label: 'Carta' },
-  { to: { name: 'mi-pedido' }, label: 'Mi pedido' },
-  { to: { name: 'perfil' }, label: 'Perfil' },
-  { to: { name: 'cesta' }, label: 'Cesta' },
-  { to: { name: 'cocina' }, label: 'Cocina' },
-  { to: { name: 'reparto' }, label: 'Reparto' },
-  { to: { name: 'admin' }, label: 'Admin' },
+  { to: { name: 'carta' }, label: 'Carta', roles: [null, 'cliente', 'cocina', 'reparto', 'admin'] },
+  { to: { name: 'mi-pedido' }, label: 'Mi pedido', roles: ['cliente'] },
+  { to: { name: 'perfil' }, label: 'Perfil', roles: ['cliente', 'admin'] },
+  { to: { name: 'cesta' }, label: 'Cesta', roles: [null, 'cliente'] },
+  { to: { name: 'cocina' }, label: 'Cocina', roles: ['cocina', 'admin'] },
+  { to: { name: 'reparto' }, label: 'Reparto', roles: ['reparto', 'admin'] },
+  { to: { name: 'admin' }, label: 'Admin', roles: ['admin'] },
 ]
+
+function isAllowed(link) {
+  return link.roles.includes(authStore.role)
+}
 
 function toggleMenu() {
   isMenuOpen.value = !isMenuOpen.value
@@ -41,8 +47,9 @@ function closeMenu() {
             v-for="link in navLinks"
             :key="link.label"
             :to="link.to"
-            class="px-3 py-1.5 rounded text-on-surface-variant text-sm hover:text-on-surface hover:bg-surface/80 transition-colors flex items-center gap-1.5"
+            class="nav-link px-3 py-1.5 rounded text-on-surface-variant text-sm hover:text-on-surface hover:bg-surface/80 transition-colors flex items-center gap-1.5"
             active-class="bg-surface text-primary font-semibold shadow-sm"
+            @click="!isAllowed(link) && $event.preventDefault()"
           >
             <span>{{ link.label }}</span>
             <span
@@ -74,9 +81,10 @@ function closeMenu() {
         v-for="link in navLinks"
         :key="link.label"
         :to="link.to"
-        class="px-3 py-2 rounded text-on-surface-variant text-sm hover:text-on-surface hover:bg-surface-variant transition-colors flex items-center gap-1.5"
+        class="nav-link px-3 py-2 rounded text-on-surface-variant text-sm hover:text-on-surface hover:bg-surface-variant transition-colors flex items-center gap-1.5"
+        :class="{ 'nav-link--inactive': !isAllowed(link) }"
         active-class="bg-surface-variant text-primary font-semibold"
-        @click="closeMenu"
+        @click="isAllowed(link) ? closeMenu() : $event.preventDefault()"
       >
         <span>{{ link.label }}</span>
         <span
@@ -89,3 +97,11 @@ function closeMenu() {
     </nav>
   </header>
 </template>
+
+<style scoped>
+.nav-link--inactive {
+  color: #b7b7b7 !important;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+</style>
