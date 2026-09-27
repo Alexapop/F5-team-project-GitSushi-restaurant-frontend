@@ -8,4 +8,21 @@ describe('router', () => {
     expect(paths).toContain('/cesta')
     expect(paths).toContain('/admin')
   })
+    it('cada ruta indica qué roles pueden acceder (meta.roles)', () => {
+    const routes = router.getRoutes()
+
+    routes.forEach((route) => {
+      expect(Array.isArray(route.meta.roles)).toBe(true)
+    })
+  })
+
+  it('cada ruta carga su vista correctamente', async () => {
+    const routes = router.getRoutes()
+
+    for (const route of routes) {
+      const loadedModule = await route.components.default()
+
+      expect(loadedModule.default).toBeDefined()
+    }
+  })
 })
