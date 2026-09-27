@@ -102,7 +102,23 @@ describe('TheHeader', () => {
     expect(wrapper.findAll('nav').length).toBe(1)
   })
 
-  it('al hacer clic en un enlace del menú móvil, este se cierra', async () => {
+    it('al hacer clic en un enlace permitido del menú móvil, este se cierra', async () => {
+    const { wrapper } = await mountHeader()
+    const menuButton = wrapper.find('button[aria-label="Abrir menú de navegación"]')
+
+    await menuButton.trigger('click')
+
+    const mobileNav = wrapper.findAll('nav')[1]
+    const cestaLink = mobileNav
+      .findAllComponents({ name: 'RouterLink' })
+      .find((link) => link.text().includes('Cesta'))
+
+    await cestaLink.trigger('click')
+
+    expect(wrapper.findAll('nav').length).toBe(1)
+  })
+
+  it('al hacer clic en un enlace no permitido del menú móvil, este sigue abierto', async () => {
     const { wrapper } = await mountHeader()
     const menuButton = wrapper.find('button[aria-label="Abrir menú de navegación"]')
 
@@ -115,6 +131,6 @@ describe('TheHeader', () => {
 
     await perfilLink.trigger('click')
 
-    expect(wrapper.findAll('nav').length).toBe(1)
+    expect(wrapper.findAll('nav').length).toBe(2)
   })
 })
