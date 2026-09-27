@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useCartStore } from '../stores/cart'
 import { useAuthStore } from '../stores/auth'
+import { ROLE_RESTRICTIONS_ENABLED } from '../constants/auth'
 import logo from '../assets/logo.png'
 
 const cartStore = useCartStore()
@@ -19,6 +20,7 @@ const navLinks = [
 ]
 
 function isAllowed(link) {
+  if (!ROLE_RESTRICTIONS_ENABLED) return true
   return link.roles.includes(authStore.role)
 }
 
