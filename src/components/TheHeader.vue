@@ -26,17 +26,36 @@ function closeMenu() {
 </script>
 
 <template>
-  <header class="fixed top-0 left-0 w-full z-50 bg-[#E5E5E5]/95 backdrop-blur-xl border-b border-[#C4C4C4] shadow-sm">
+  <header
+    class="fixed top-0 left-0 w-full z-50 bg-[#E5E5E5]/95 backdrop-blur-xl border-b border-[#C4C4C4] shadow-sm"
+  >
     <div class="h-16 max-w-[1200px] mx-auto px-5 flex items-center justify-between gap-4">
       <div class="flex items-center gap-6">
-        <router-link :to="{ name: 'carta' }" class="flex items-center gap-2 group" @click="closeMenu">
-            <div class="w-9 h-9 rounded-lg bg-surface flex items-center justify-center border border-outline group-hover:border-primary shadow-sm transition-colors overflow-hidden">
-            <img :src="logo" alt="GitSushi" class="w-full h-full object-cover" />
+        <router-link
+          :to="{ name: 'carta' }"
+          class="flex items-center gap-2 group"
+          @click="closeMenu"
+        >
+          <div
+            class="w-9 h-9 rounded-lg bg-surface flex items-center justify-center border border-outline group-hover:border-primary shadow-sm transition-colors overflow-hidden"
+          >
+            <img
+              :src="logo"
+              alt="GitSushi"
+              class="w-full h-full object-cover"
+            />
           </div>
-          <span class="text-on-surface tracking-tight font-bold group-hover:text-primary transition-colors">GitSushi</span>
+
+          <span
+            class="text-on-surface tracking-tight font-bold group-hover:text-primary transition-colors"
+          >
+            GitSushi
+          </span>
         </router-link>
 
-        <nav class="hidden xl:flex items-center gap-1 bg-surface/70 p-1 rounded-lg border border-[#C4C4C4] shadow-sm">
+        <nav
+          class="hidden xl:flex items-center gap-1 bg-surface/70 p-1 rounded-lg border border-[#C4C4C4] shadow-sm"
+        >
           <router-link
             v-for="link in navLinks"
             :key="link.label"
@@ -45,6 +64,7 @@ function closeMenu() {
             active-class="bg-surface text-primary font-semibold shadow-sm"
           >
             <span>{{ link.label }}</span>
+
             <span
               v-if="link.label === 'Cesta' && cartStore.itemCount > 0"
               class="px-1.5 py-0.5 rounded-full bg-[#f08069] text-white text-[11px] font-bold"
@@ -55,6 +75,23 @@ function closeMenu() {
         </nav>
       </div>
 
+      <!-- Acciones de autenticación para escritorio -->
+      <div class="hidden xl:flex items-center gap-2">
+        <router-link
+          :to="{ name: 'login' }"
+          class="px-3 py-2 rounded-lg text-sm font-semibold text-on-surface-variant hover:text-primary transition-colors"
+        >
+          Iniciar sesión
+        </router-link>
+
+        <router-link
+          :to="{ name: 'register' }"
+          class="px-4 py-2 rounded-lg bg-primary-container text-sm font-semibold text-on-primary-container transition hover:opacity-90"
+        >
+          Registrarse
+        </router-link>
+      </div>
+
       <button
         type="button"
         class="xl:hidden flex items-center justify-center w-9 h-9 rounded-lg border border-[#C4C4C4] bg-surface/70"
@@ -62,10 +99,13 @@ function closeMenu() {
         aria-label="Abrir menú de navegación"
         @click="toggleMenu"
       >
-        <span class="text-lg leading-none">{{ isMenuOpen ? '✕' : '☰' }}</span>
+        <span class="text-lg leading-none">
+          {{ isMenuOpen ? '✕' : '☰' }}
+        </span>
       </button>
     </div>
 
+    <!-- Navegación móvil -->
     <nav
       v-if="isMenuOpen"
       class="xl:hidden flex flex-col gap-1 bg-surface border-t border-[#C4C4C4] px-5 py-3"
@@ -79,6 +119,7 @@ function closeMenu() {
         @click="closeMenu"
       >
         <span>{{ link.label }}</span>
+
         <span
           v-if="link.label === 'Cesta' && cartStore.itemCount > 0"
           class="px-1.5 py-0.5 rounded-full bg-[#f08069] text-white text-[11px] font-bold"
@@ -86,6 +127,25 @@ function closeMenu() {
           {{ cartStore.itemCount }}
         </span>
       </router-link>
+
+      <!-- Acciones de autenticación para móvil -->
+      <div class="mt-2 flex flex-col gap-2 border-t border-[#C4C4C4] pt-3">
+        <router-link
+          :to="{ name: 'login' }"
+          class="px-3 py-2 rounded text-sm font-semibold text-on-surface-variant hover:text-primary transition-colors"
+          @click="closeMenu"
+        >
+          Iniciar sesión
+        </router-link>
+
+        <router-link
+          :to="{ name: 'register' }"
+          class="px-3 py-2 rounded bg-primary-container text-sm font-semibold text-on-primary-container transition hover:opacity-90"
+          @click="closeMenu"
+        >
+          Registrarse
+        </router-link>
+      </div>
     </nav>
   </header>
 </template>
