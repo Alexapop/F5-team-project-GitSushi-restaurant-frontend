@@ -1,14 +1,36 @@
 <script setup>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { authService } from '../../services/authService'
+
+const router = useRouter()
 
 const email = ref('')
 const password = ref('')
+const errorMessage = ref('')
+const isLoading = ref(false)
 
-const handleSubmit = () => {
+const handleSubmit = async () => {
+  errorMessage.value = ''
+  isLoading.value = true
 
+  try {
+    await authService.login({
+      email: email.value,
+      password: password.value,
+    })
+
+    await router.push('/perfil')
+  } catch (error) {
+    errorMessage.value =
+      error.response?.data?.message ||
+      'No se ha podido iniciar sesión. Revisa tus datos.'
+  } finally {
+    isLoading.value = false
+  }
 }
-
 </script>
+
 
 <template>
 <form
@@ -52,12 +74,19 @@ const handleSubmit = () => {
         placeholder="••••••••"
       />
     </div>
-
+<p
+  v-if="errorMessage"
+  role="alert"
+  class="text-sm text-error"
+>
+  {{ errorMessage }}
+</p>
 <button
   type="submit"
-  class="w-full rounded-lg bg-primary-container px-4 py-3 font-semibold transition hover:opacity-90"
+  :disabled="isLoading"
+  class="w-full rounded-lg bg-primary-container px-4 py-3 font-semibold transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
 >
-  Iniciar sesión
+  {{ isLoading ? 'Iniciando sesión...' : 'Iniciar sesión' }}
 </button>
 
     <p class="text-center text-sm">
