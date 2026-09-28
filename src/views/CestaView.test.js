@@ -81,4 +81,5 @@ describe('CestaView', () => {
 
     expect(wrapper.text()).toContain('Salmon Roll')
   })
+
 })

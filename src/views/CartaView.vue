@@ -27,7 +27,7 @@
         v-if="totalPages > 1"
         :current-page="currentPage"
         :total-pages="totalPages"
-        @change-page="goToPage"
+        @change-page="handleChangePage"
       />
     </template>
   </main>
@@ -61,6 +61,15 @@ function handleAddToCart({ product, quantity }) {
   for (let i = 1; i < quantity; i++) {
     cartStore.incrementQuantity(product.id);
   }
+}
+
+// Al cambiar de página, subimos la vista al principio: si no, el usuario
+// se queda abajo del todo, justo donde ha pulsado el control de
+// paginación, sin ver ninguno de los productos de la página nueva hasta
+// hacer scroll manualmente hacia arriba.
+function handleChangePage(page) {
+  goToPage(page);
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 </script>
 
