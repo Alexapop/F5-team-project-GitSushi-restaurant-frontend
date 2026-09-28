@@ -3,6 +3,7 @@ import axios from 'axios'
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
   withCredentials: true,
+  withXSRFToken: true,
   xsrfCookieName: 'XSRF-TOKEN',
   xsrfHeaderName: 'X-XSRF-TOKEN',
 })
@@ -26,6 +27,11 @@ api.interceptors.response.use(
     const originalRequest = error.config
 
     if (error.response?.status !== 401) {
+      return Promise.reject(error)
+    }
+
+    // to avoid refreshing if provided bad credentials on login
+    if (error.response?.url?.includes('/auth/login') && error.response?.status === 401) {
       return Promise.reject(error)
     }
 
