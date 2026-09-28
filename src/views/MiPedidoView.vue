@@ -1,5 +1,5 @@
 <script setup>
-import OrderTracking from "../components/OrderTracking.vue";
+
 import OrderTicket from "../components/OrderTicket.vue";
 import OrderHistorySection from "../components/OrderHistorySection.vue";
 
@@ -29,7 +29,6 @@ const order = {
 
 <template>
   <main>
-    <OrderTracking />
 
     <OrderTicket
       :order-number="order.orderNumber"
