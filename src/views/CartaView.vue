@@ -1,7 +1,7 @@
 <template>
   <Hero />
 
-  <main class="carta-view">
+  <main id="productos-carta" class="carta-view">
     <h1 class="carta-view__title">Nuestra carta</h1>
 
     <p v-if="isLoading" class="carta-view__status">Cargando la carta...</p>
