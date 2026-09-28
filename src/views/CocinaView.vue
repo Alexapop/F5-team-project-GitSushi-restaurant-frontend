@@ -2,37 +2,65 @@
 import { onMounted, ref } from 'vue'
 import KitchenMetrics from '../components/KitchenMetrics.vue'
 import KitchenOrderList from '../components/KitchenOrderList.vue'
-import { getKitchenOrders } from '../services/kitchen.service'
+import {
+  getKitchenOrders,
+  getKitchenMetrics,
+} from '../services/kitchen.service'
 
 const orders = ref([])
-const isLoading = ref(true)
-const error = ref(null)
+const metrics = ref(null)
+
+const isLoadingOrders = ref(true)
+const isLoadingMetrics = ref(true)
+
+const ordersError = ref(null)
+const metricsError = ref(null)
 
 async function loadOrders() {
-  isLoading.value = true
-  error.value = null
+  isLoadingOrders.value = true
+  ordersError.value = null
 
   try {
     orders.value = await getKitchenOrders()
   } catch {
-    error.value = 'No se han podido cargar las comandas.'
+    ordersError.value = 'No se han podido cargar las comandas.'
   } finally {
-    isLoading.value = false
+    isLoadingOrders.value = false
   }
 }
 
-onMounted(loadOrders)
+async function loadMetrics() {
+  isLoadingMetrics.value = true
+  metricsError.value = null
+
+  try {
+    metrics.value = await getKitchenMetrics()
+  } catch {
+    metricsError.value = 'No se han podido cargar las métricas de cocina.'
+  } finally {
+    isLoadingMetrics.value = false
+  }
+}
+
+onMounted(() => {
+  loadOrders()
+  loadMetrics()
+})
 </script>
 
 <template>
   <main class="page-container py-8">
-    <KitchenMetrics />
+    <KitchenMetrics
+      :metrics="metrics"
+      :is-loading="isLoadingMetrics"
+      :error="metricsError"
+    />
 
     <div class="mt-8">
       <KitchenOrderList
         :orders="orders"
-        :is-loading="isLoading"
-        :error="error"
+        :is-loading="isLoadingOrders"
+        :error="ordersError"
       />
     </div>
   </main>

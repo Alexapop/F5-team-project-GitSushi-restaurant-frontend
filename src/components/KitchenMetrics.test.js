@@ -1,50 +1,73 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import KitchenMetrics from './KitchenMetrics.vue'
 
+const metrics = {
+  totalActiveOrders: 12,
+  averagePreparationMinutes: 18,
+  processingCount: 7,
+  delayedCount: 2,
+  readyCount: 3,
+}
+
 describe('KitchenMetrics', () => {
   it('shows the kitchen metrics', () => {
-    const wrapper = mount(KitchenMetrics)
+    const wrapper = mount(KitchenMetrics, {
+      props: { metrics },
+    })
 
-    expect(wrapper.text()).toContain('Dashboard de Cocina')
-    expect(wrapper.text()).toContain('Comandas activas')
     expect(wrapper.text()).toContain('12')
-    expect(wrapper.text()).toContain('Tiempo medio prep')
     expect(wrapper.text()).toContain('18 min')
     expect(wrapper.text()).toContain('En preparación: 7')
     expect(wrapper.text()).toContain('Con retraso: 2')
     expect(wrapper.text()).toContain('Listas para pase: 3')
+  })
+
+  it('shows delayed orders alert', () => {
+    const wrapper = mount(KitchenMetrics, {
+      props: { metrics },
+    })
+
     expect(wrapper.text()).toContain('2 con retraso')
   })
 
-  it('shows the loading state', () => {
+  it('does not show delayed alert when there are no delayed orders', () => {
     const wrapper = mount(KitchenMetrics, {
       props: {
-        isLoading: true
-      }
+        metrics: {
+          ...metrics,
+          delayedCount: 0,
+        },
+      },
+    })
+
+    expect(wrapper.text()).not.toContain('0 con retraso')
+  })
+
+  it('shows loading state', () => {
+    const wrapper = mount(KitchenMetrics, {
+      props: {
+        isLoading: true,
+      },
     })
 
     expect(wrapper.text()).toContain('Cargando métricas de cocina...')
   })
 
-  it('shows the error state', () => {
+  it('shows error state', () => {
     const wrapper = mount(KitchenMetrics, {
       props: {
-        error: 'Error al cargar las métricas de cocina'
-      }
+        error: 'No se han podido cargar las métricas de cocina.',
+      },
     })
 
     expect(wrapper.text()).toContain(
-      'Error al cargar las métricas de cocina'
+      'No se han podido cargar las métricas de cocina.'
     )
   })
 
-  it('shows the empty state', () => {
-    const wrapper = mount(KitchenMetrics, {
-      props: {
-        hasMetrics: false
-      }
-    })
+  it('shows empty state when metrics are not available', () => {
+    const wrapper = mount(KitchenMetrics)
 
     expect(wrapper.text()).toContain(
       'No hay métricas de cocina disponibles.'

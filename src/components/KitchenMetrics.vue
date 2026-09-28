@@ -1,28 +1,18 @@
 <script setup>
-const props = defineProps({
+defineProps({
+  metrics: {
+    type: Object,
+    default: null,
+  },
   isLoading: {
     type: Boolean,
-    default: false
+    default: false,
   },
   error: {
     type: String,
-    default: null
+    default: null,
   },
-  hasMetrics: {
-    type: Boolean,
-    default: true
-  }
 })
-
-const metrics = {
-  activeOrders: 12,
-  averagePreparationTime: 18,
-  lineStatus: {
-    preparing: 7,
-    delayed: 2,
-    ready: 3
-  }
-}
 </script>
 
 <template>
@@ -30,21 +20,21 @@ const metrics = {
     <h1 class="mb-6">Dashboard de Cocina</h1>
 
     <p
-      v-if="props.isLoading"
+      v-if="isLoading"
       class="card p-6 text-on-surface-variant"
     >
       Cargando métricas de cocina...
     </p>
 
     <p
-      v-else-if="props.error"
+      v-else-if="error"
       class="card p-6 text-error"
     >
-      {{ props.error }}
+      {{ error }}
     </p>
 
     <p
-      v-else-if="!props.hasMetrics"
+      v-else-if="!metrics"
       class="card p-6 text-on-surface-variant"
     >
       No hay métricas de cocina disponibles.
@@ -60,7 +50,7 @@ const metrics = {
         </p>
 
         <p class="mt-2 text-3xl font-bold text-on-surface">
-          {{ metrics.activeOrders }}
+          {{ metrics.totalActiveOrders }}
         </p>
       </article>
 
@@ -70,7 +60,7 @@ const metrics = {
         </p>
 
         <p class="mt-2 text-3xl font-bold text-on-surface">
-          {{ metrics.averagePreparationTime }} min
+          {{ metrics.averagePreparationMinutes }} min
         </p>
       </article>
 
@@ -81,24 +71,24 @@ const metrics = {
           </p>
 
           <span
-            v-if="metrics.lineStatus.delayed > 0"
+            v-if="metrics.delayedCount > 0"
             class="rounded-full px-3 py-1 text-sm font-medium text-error"
           >
-            {{ metrics.lineStatus.delayed }} con retraso
+            {{ metrics.delayedCount }} con retraso
           </span>
         </div>
 
         <div class="mt-4 space-y-2 text-on-surface">
           <p>
-            En preparación: {{ metrics.lineStatus.preparing }}
+            En preparación: {{ metrics.processingCount }}
           </p>
 
           <p>
-            Con retraso: {{ metrics.lineStatus.delayed }}
+            Con retraso: {{ metrics.delayedCount }}
           </p>
 
           <p>
-            Listas para pase: {{ metrics.lineStatus.ready }}
+            Listas para pase: {{ metrics.readyCount }}
           </p>
         </div>
       </article>
