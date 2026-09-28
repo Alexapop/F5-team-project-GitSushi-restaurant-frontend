@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { DINE_IN_PAYMENT_METHODS, getBackendPaymentMethod } from './paymentMethods'
+import { DINE_IN_PAYMENT_METHODS, getBackendPaymentMethod, getPaymentStatusLabel } from './paymentMethods'
 
 describe('getBackendPaymentMethod', () => {
   it('translates each dine-in payment method to its real backend enum value', () => {
@@ -14,6 +14,22 @@ describe('getBackendPaymentMethod', () => {
   it('returns null for a null or undefined value', () => {
     expect(getBackendPaymentMethod(null)).toBeNull()
     expect(getBackendPaymentMethod(undefined)).toBeNull()
+  })
+})
+
+describe('getPaymentStatusLabel', () => {
+  it('translates each known backend payment status to its Spanish label', () => {
+    expect(getPaymentStatusLabel('PENDING_CASH')).toBe('pendiente de cobro en caja')
+    expect(getPaymentStatusLabel('PENDING_CARD_TERMINAL')).toBe('pago pendiente en mesa')
+  })
+
+  it('returns null for a status that does not match any known payment method', () => {
+    expect(getPaymentStatusLabel('UNKNOWN_STATUS')).toBeNull()
+  })
+
+  it('returns null for a null or undefined value', () => {
+    expect(getPaymentStatusLabel(null)).toBeNull()
+    expect(getPaymentStatusLabel(undefined)).toBeNull()
   })
 })
 
