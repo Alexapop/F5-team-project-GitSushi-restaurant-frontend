@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
 import { createRouter, createWebHistory } from "vue-router";
 import { createPinia, setActivePinia } from "pinia";
@@ -43,6 +43,10 @@ describe("OrderConfirmation", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     localStorage.clear();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("disables the confirm button when the cart is empty", async () => {
@@ -100,7 +104,7 @@ describe("OrderConfirmation", () => {
     );
   });
 
-  it("sends the mapped cart items, channel and payment method, then empties the cart and navigates to the tracking view", async () => {
+  it("sends the mapped cart items, channel and payment method, then empties the cart", async () => {
     vi.spyOn(ordersService, "createOrder").mockResolvedValue({
       id: 99,
       paymentStatus: "PENDING_CASH",
@@ -127,6 +131,32 @@ describe("OrderConfirmation", () => {
       paymentStatus: "PENDING_CASH",
     });
     expect(cartStore.isEmpty).toBe(true);
+    // La navegación todavía no ha ocurrido: primero se muestra el estado de pago
+    expect(router.currentRoute.value.name).toBe("cesta");
+  });
+
+  it("shows the translated payment status and navigates to the tracking view only after the delay", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    vi.spyOn(ordersService, "createOrder").mockResolvedValue({
+      id: 99,
+      paymentStatus: "PENDING_CASH",
+    });
+    const { wrapper, cartStore, checkoutStore, router } =
+      await mountOrderConfirmation();
+    cartStore.addProduct({ id: 1, name: "Salmon Roll", price: 10 });
+    checkoutStore.setPaymentMethod("cashier");
+    await flushPromises();
+
+    await wrapper.find(".order-confirmation__button").trigger("click");
+    await flushPromises();
+
+    expect(wrapper.find(".order-confirmation__success").text()).toContain(
+      "pendiente de cobro en caja",
+    );
+    expect(router.currentRoute.value.name).toBe("cesta");
+
+    await vi.advanceTimersByTimeAsync(2500);
+
     expect(router.currentRoute.value.name).toBe("mi-pedido");
   });
 

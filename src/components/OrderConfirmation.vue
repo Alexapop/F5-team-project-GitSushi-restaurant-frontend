@@ -5,7 +5,9 @@ import { useCartStore } from '../stores/cart'
 import { useCheckoutStore } from '../stores/checkout'
 import { useLastOrderStore } from '../stores/lastOrder'
 import { createOrder } from '../services/orders.service'
-import { getBackendPaymentMethod } from '../constants/paymentMethods'
+import { getBackendPaymentMethod, getPaymentStatusLabel } from '../constants/paymentMethods'
+
+const NAVIGATION_DELAY_MS = 2500
 
 const router = useRouter()
 const cartStore = useCartStore()
@@ -14,6 +16,7 @@ const lastOrderStore = useLastOrderStore()
 
 const isSubmitting = ref(false)
 const errorMessage = ref(null)
+const paymentStatusMessage = ref(null)
 
 const canConfirmOrder = computed(() => {
   if (cartStore.isEmpty) return false
@@ -42,8 +45,12 @@ async function confirmOrder() {
     })
 
     lastOrderStore.setOrder(order)
+    paymentStatusMessage.value = getPaymentStatusLabel(order.paymentStatus)
     cartStore.clearCart()
-    router.push({ name: 'mi-pedido' })
+
+    setTimeout(() => {
+      router.push({ name: 'mi-pedido' })
+    }, NAVIGATION_DELAY_MS)
   } catch (err) {
     errorMessage.value = 'No se ha podido confirmar el pedido. Inténtalo de nuevo.'
     console.error('[OrderConfirmation] Error al confirmar el pedido:', err)
@@ -77,6 +84,10 @@ async function confirmOrder() {
     </dl>
 
     <p v-if="errorMessage" class="order-confirmation__error">{{ errorMessage }}</p>
+
+    <p v-if="paymentStatusMessage" class="order-confirmation__success" role="status">
+      Pedido confirmado — {{ paymentStatusMessage }}. Redirigiendo a tu pedido...
+    </p>
 
     <button
       type="button"
@@ -118,6 +129,10 @@ async function confirmOrder() {
 
 .order-confirmation__error {
   @apply text-sm text-error;
+}
+
+.order-confirmation__success {
+  @apply text-sm font-medium text-secondary;
 }
 
 .order-confirmation__button {
