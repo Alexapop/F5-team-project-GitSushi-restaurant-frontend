@@ -24,3 +24,12 @@ export async function getKitchenMetrics() {
   const response = await api.get(KITCHEN_METRICS_ENDPOINT)
   return response.data
 }
+
+export async function updateKitchenOrderStatus(orderId, status) {
+  const response = await api.patch(
+    `/api/v1/kitchen/orders/${orderId}/status`,
+    { status }
+  )
+
+  return response.data
+}
