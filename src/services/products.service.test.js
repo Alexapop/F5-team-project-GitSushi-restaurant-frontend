@@ -11,13 +11,13 @@ vi.mock('./api', () => ({
 function buildSpringPage(overrides = {}) {
   return {
     content: [{ id: 1, name: 'Salmon Roll' }],
-    totalElements: 1,
-    totalPages: 1,
-    number: 0,
-    size: 12,
-    first: true,
-    last: true,
-    ...overrides,
+    page: {
+      totalElements: 1,
+      totalPages: 1,
+      number: 0,
+      size: 12,
+      ...overrides,
+    },
   }
 }
 
@@ -58,7 +58,7 @@ describe('products.service', () => {
 
   it('maps the Spring Page response into the shape used by the app', async () => {
     api.get.mockResolvedValue({
-      data: buildSpringPage({ totalElements: 25, totalPages: 3, first: true, last: false }),
+      data: buildSpringPage({ totalElements: 25, totalPages: 3 }),
     })
 
     const result = await getProducts()
@@ -69,8 +69,6 @@ describe('products.service', () => {
       size: 12,
       totalItems: 25,
       totalPages: 3,
-      isFirstPage: true,
-      isLastPage: false,
     })
   })
 })
