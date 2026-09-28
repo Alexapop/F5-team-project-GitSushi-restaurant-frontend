@@ -128,7 +128,7 @@ describe('TheHeader', () => {
     expect(wrapper.findAll('nav').length).toBe(1)
   })
 
-  it('al hacer clic en un enlace del menú móvil, este se cierra', async () => {
+  it('al hacer clic en un enlace permitido del menú móvil, este se cierra', async () => {
     const { wrapper } = await mountHeader()
 
     const menuButton = wrapper.find(
@@ -139,7 +139,48 @@ describe('TheHeader', () => {
 
     const mobileNav = wrapper.findAll('nav')[1]
 
-    const perfilLink = mobileNav
+    const cestaLink = mobileNav
+      .findAllComponents({ name: 'RouterLink' })
+      .find((link) => link.text().includes('Cesta'))
+
+    await cestaLink.trigger('click')
+
+    expect(wrapper.findAll('nav').length).toBe(1)
+  })
+
+  it('mientras las restricciones están desactivadas, todos los enlaces del menú móvil están accesibles', async () => {
+    const { wrapper } = await mountHeader()
+
+    await wrapper
+      .find('button[aria-label="Abrir menú de navegación"]')
+      .trigger('click')
+
+    const mobileLinks = wrapper
+      .findAll('nav')[1]
+      .findAllComponents({ name: 'RouterLink' })
+      .filter((link) =>
+        ['Carta', 'Mi pedido', 'Perfil', 'Cesta', 'Cocina', 'Reparto', 'Admin']
+          .includes(link.text())
+      )
+
+    expect(mobileLinks).toHaveLength(7)
+
+    mobileLinks.forEach((link) => {
+      expect(link.classes()).not.toContain('nav-link--inactive')
+    })
+  })
+
+  it('al hacer clic en Perfil desde el menú móvil, este se cierra', async () => {
+    const { wrapper } = await mountHeader()
+
+    const menuButton = wrapper.find(
+      'button[aria-label="Abrir menú de navegación"]'
+    )
+
+    await menuButton.trigger('click')
+
+    const perfilLink = wrapper
+      .findAll('nav')[1]
       .findAllComponents({ name: 'RouterLink' })
       .find((link) => link.text().includes('Perfil'))
 

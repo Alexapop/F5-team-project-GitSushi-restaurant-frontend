@@ -4,6 +4,7 @@ import { authService } from '../services/authService'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref(null)
+  const role = ref(null)
   const isLoading = ref(false)
 
   const isAuthenticated = computed(() => user.value !== null)
@@ -13,6 +14,8 @@ export const useAuthStore = defineStore('auth', () => {
 
     try {
       user.value = await authService.login(credentials)
+      role.value = user.value?.role ?? null
+
       return user.value
     } finally {
       isLoading.value = false
@@ -22,8 +25,10 @@ export const useAuthStore = defineStore('auth', () => {
   async function fetchCurrentUser() {
     try {
       user.value = await authService.getCurrentUser()
+      role.value = user.value?.role ?? null
     } catch {
       user.value = null
+      role.value = null
     }
   }
 
@@ -32,11 +37,13 @@ export const useAuthStore = defineStore('auth', () => {
       await authService.logout()
     } finally {
       user.value = null
+      role.value = null
     }
   }
 
   return {
     user,
+    role,
     isLoading,
     isAuthenticated,
     login,

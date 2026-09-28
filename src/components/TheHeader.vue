@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cart'
 import { useAuthStore } from '../stores/auth'
+import { ROLE_RESTRICTIONS_ENABLED } from '../constants/auth'
 import logo from '../assets/logo.png'
 
 const router = useRouter()
@@ -12,14 +13,19 @@ const authStore = useAuthStore()
 const isMenuOpen = ref(false)
 
 const navLinks = [
-  { to: { name: 'carta' }, label: 'Carta' },
-  { to: { name: 'mi-pedido' }, label: 'Mi pedido' },
-  { to: { name: 'perfil' }, label: 'Perfil' },
-  { to: { name: 'cesta' }, label: 'Cesta' },
-  { to: { name: 'cocina' }, label: 'Cocina' },
-  { to: { name: 'reparto' }, label: 'Reparto' },
-  { to: { name: 'admin' }, label: 'Admin' },
+  { to: { name: 'carta' }, label: 'Carta', roles: [null, 'cliente', 'cocina', 'reparto', 'admin'] },
+  { to: { name: 'mi-pedido' }, label: 'Mi pedido', roles: ['cliente'] },
+  { to: { name: 'perfil' }, label: 'Perfil', roles: ['cliente', 'admin'] },
+  { to: { name: 'cesta' }, label: 'Cesta', roles: [null, 'cliente'] },
+  { to: { name: 'cocina' }, label: 'Cocina', roles: ['cocina', 'admin'] },
+  { to: { name: 'reparto' }, label: 'Reparto', roles: ['reparto', 'admin'] },
+  { to: { name: 'admin' }, label: 'Admin', roles: ['admin'] },
 ]
+
+function isAllowed(link) {
+  if (!ROLE_RESTRICTIONS_ENABLED) return true
+  return link.roles.includes(authStore.role)
+}
 
 function toggleMenu() {
   isMenuOpen.value = !isMenuOpen.value
@@ -71,8 +77,10 @@ async function handleLogout() {
             v-for="link in navLinks"
             :key="link.label"
             :to="link.to"
-            class="flex items-center gap-1.5 rounded px-3 py-1.5 text-sm text-on-surface-variant transition-colors hover:bg-surface/80 hover:text-on-surface"
+            class="nav-link flex items-center gap-1.5 rounded px-3 py-1.5 text-sm text-on-surface-variant transition-colors hover:bg-surface/80 hover:text-on-surface"
+            :class="{ 'nav-link--inactive': !isAllowed(link) }"
             active-class="bg-surface text-primary font-semibold shadow-sm"
+            @click="!isAllowed(link) && $event.preventDefault()"
           >
             <span>{{ link.label }}</span>
 
@@ -86,7 +94,6 @@ async function handleLogout() {
         </nav>
       </div>
 
-      <!-- Usuario no autenticado -->
       <div
         v-if="!authStore.isAuthenticated"
         class="hidden items-center gap-2 xl:flex"
@@ -106,7 +113,6 @@ async function handleLogout() {
         </router-link>
       </div>
 
-      <!-- Usuario autenticado -->
       <div
         v-else
         class="hidden items-center gap-2 xl:flex"
@@ -140,7 +146,6 @@ async function handleLogout() {
       </button>
     </div>
 
-    <!-- Navegación móvil -->
     <nav
       v-if="isMenuOpen"
       class="flex flex-col gap-1 border-t border-[#C4C4C4] bg-surface px-5 py-3 xl:hidden"
@@ -149,9 +154,10 @@ async function handleLogout() {
         v-for="link in navLinks"
         :key="link.label"
         :to="link.to"
-        class="flex items-center gap-1.5 rounded px-3 py-2 text-sm text-on-surface-variant transition-colors hover:bg-surface-variant hover:text-on-surface"
+        class="nav-link flex items-center gap-1.5 rounded px-3 py-2 text-sm text-on-surface-variant transition-colors hover:bg-surface-variant hover:text-on-surface"
+        :class="{ 'nav-link--inactive': !isAllowed(link) }"
         active-class="bg-surface-variant text-primary font-semibold"
-        @click="closeMenu"
+        @click="isAllowed(link) ? closeMenu() : $event.preventDefault()"
       >
         <span>{{ link.label }}</span>
 
@@ -163,7 +169,6 @@ async function handleLogout() {
         </span>
       </router-link>
 
-      <!-- Usuario no autenticado -->
       <div
         v-if="!authStore.isAuthenticated"
         class="mt-2 flex flex-col gap-2 border-t border-[#C4C4C4] pt-3"
@@ -185,7 +190,6 @@ async function handleLogout() {
         </router-link>
       </div>
 
-      <!-- Usuario autenticado -->
       <div
         v-else
         class="mt-2 flex flex-col gap-2 border-t border-[#C4C4C4] pt-3"
@@ -209,3 +213,11 @@ async function handleLogout() {
     </nav>
   </header>
 </template>
+
+<style scoped>
+.nav-link--inactive {
+  color: #b7b7b7 !important;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+</style>
