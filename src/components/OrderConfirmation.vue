@@ -3,12 +3,14 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cart'
 import { useCheckoutStore } from '../stores/checkout'
+import { useLastOrderStore } from '../stores/lastOrder'
 import { createOrder } from '../services/orders.service'
 import { getBackendPaymentMethod } from '../constants/paymentMethods'
 
 const router = useRouter()
 const cartStore = useCartStore()
 const checkoutStore = useCheckoutStore()
+const lastOrderStore = useLastOrderStore()
 
 const isSubmitting = ref(false)
 const errorMessage = ref(null)
@@ -18,6 +20,9 @@ const canConfirmOrder = computed(() => {
   if (checkoutStore.channel === 'sala' && !checkoutStore.paymentMethod) return false
   return true
 })
+
+const formatCurrency = (value) =>
+  value.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })
 
 async function confirmOrder() {
   isSubmitting.value = true
@@ -29,13 +34,14 @@ async function confirmOrder() {
       quantity: item.quantity,
     }))
 
-    await createOrder({
+    const order = await createOrder({
       items,
       chefNote: checkoutStore.chefNote,
       channel: checkoutStore.channel,
       paymentMethod: getBackendPaymentMethod(checkoutStore.paymentMethod),
-     })
+    })
 
+    lastOrderStore.setOrder(order)
     cartStore.clearCart()
     router.push({ name: 'mi-pedido' })
   } catch (err) {
@@ -54,22 +60,19 @@ async function confirmOrder() {
     <dl class="order-confirmation__summary">
       <div class="order-confirmation__row">
         <dt>Subtotal</dt>
-        <dd>{{ cartStore.subtotal.toFixed(2) }} €</dd>
+        <dd>{{ formatCurrency(cartStore.subtotal) }}</dd>
       </div>
-      <div
-        v-if="cartStore.discountAmount > 0"
-        class="order-confirmation__row order-confirmation__row--discount"
-      >
+      <div v-if="cartStore.discountAmount > 0" class="order-confirmation__row order-confirmation__row--discount">
         <dt>Descuento</dt>
         <dd>−{{ cartStore.discountAmount.toFixed(2) }} €</dd>
       </div>
       <div class="order-confirmation__row">
         <dt>IVA</dt>
-        <dd>{{ cartStore.taxAmount.toFixed(2) }} €</dd>
+        <dd>{{ formatCurrency(cartStore.taxAmount) }}</dd>
       </div>
       <div class="order-confirmation__row order-confirmation__row--total">
         <dt>Total</dt>
-        <dd>{{ cartStore.total.toFixed(2) }} €</dd>
+        <dd>{{ formatCurrency(cartStore.total) }}</dd>
       </div>
     </dl>
 
@@ -90,11 +93,11 @@ async function confirmOrder() {
 @reference "../style.css";
 
 .order-confirmation {
-  @apply flex flex-col gap-3 rounded-lg border border-neutral-200 p-4;
+  @apply flex flex-col gap-3 rounded-lg border border-outline-variant bg-surface p-4;
 }
 
 .order-confirmation__title {
-  @apply text-lg font-semibold;
+  @apply font-heading text-lg font-semibold text-on-surface;
 }
 
 .order-confirmation__summary {
@@ -102,7 +105,7 @@ async function confirmOrder() {
 }
 
 .order-confirmation__row {
-  @apply flex justify-between text-sm;
+  @apply flex justify-between text-sm text-on-surface-variant;
 }
 
 .order-confirmation__row--discount {
@@ -110,7 +113,7 @@ async function confirmOrder() {
 }
 
 .order-confirmation__row--total {
-  @apply text-base font-semibold;
+  @apply text-base font-semibold text-on-surface;
 }
 
 .order-confirmation__error {
