@@ -22,8 +22,6 @@ function buildResult(overrides = {}) {
     size: 12,
     totalItems: 1,
     totalPages: 1,
-    isFirstPage: true,
-    isLastPage: true,
     ...overrides,
   }
 }
