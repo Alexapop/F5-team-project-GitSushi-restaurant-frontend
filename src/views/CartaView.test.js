@@ -22,8 +22,6 @@ function buildResult(overrides = {}) {
     size: 12,
     totalItems: 1,
     totalPages: 1,
-    isFirstPage: true,
-    isLastPage: true,
     ...overrides,
   }
 }
@@ -135,5 +133,19 @@ describe('CartaView', () => {
     await wrapper.findComponent(ProductCard).vm.$emit('add-to-cart', { product, quantity: 3 })
 
     expect(cartStore.items[0].quantity).toBe(3)
+  })
+
+    it('scrolls to the top of the page when the pagination control emits change-page', async () => {
+    vi.spyOn(productsService, 'getProducts').mockResolvedValue(
+      buildResult({ totalPages: 3, isLastPage: false })
+    )
+    const scrollToSpy = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
+    const { wrapper } = await mountCartaView()
+    await flushPromises()
+
+    await wrapper.findComponent(PaginationControl).vm.$emit('change-page', 2)
+    await flushPromises()
+
+    expect(scrollToSpy).toHaveBeenCalledWith({ top: 0, behavior: 'smooth' })
   })
 })
