@@ -1,21 +1,20 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { authService } from '../../services/authService'
+import { useAuthStore } from '../../stores/auth'
 
 const router = useRouter()
+const authStore = useAuthStore()
 
 const email = ref('')
 const password = ref('')
 const errorMessage = ref('')
-const isLoading = ref(false)
 
 const handleSubmit = async () => {
   errorMessage.value = ''
-  isLoading.value = true
 
   try {
-    await authService.login({
+    await authStore.login({
       email: email.value,
       password: password.value,
     })
@@ -25,8 +24,6 @@ const handleSubmit = async () => {
     errorMessage.value =
       error.response?.data?.message ||
       'No se ha podido iniciar sesión. Revisa tus datos.'
-  } finally {
-    isLoading.value = false
   }
 }
 </script>
@@ -83,10 +80,10 @@ const handleSubmit = async () => {
 </p>
 <button
   type="submit"
-  :disabled="isLoading"
+  :disabled="authStore.isLoading"
   class="w-full rounded-lg bg-primary-container px-4 py-3 font-semibold transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
 >
-  {{ isLoading ? 'Iniciando sesión...' : 'Iniciar sesión' }}
+  {{ authStore.isLoading ? 'Iniciando sesión...' : 'Iniciar sesión' }}
 </button>
 
     <p class="text-center text-sm">
