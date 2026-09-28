@@ -12,14 +12,8 @@ export async function getProducts({ page = 1, size = DEFAULT_PAGE_SIZE, category
     },
   })
 
-  const {
-    content,
-    totalElements,
-    totalPages,
-    number,
-    first,
-    last,
-  } = response.data
+  const { content, page: pageInfo } = response.data
+  const { totalElements, totalPages, number } = pageInfo
 
   return {
     items: content,
@@ -27,7 +21,5 @@ export async function getProducts({ page = 1, size = DEFAULT_PAGE_SIZE, category
     size,
     totalItems: totalElements,
     totalPages,
-    isFirstPage: first,
-    isLastPage: last,
   }
 }
