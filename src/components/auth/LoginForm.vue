@@ -71,6 +71,14 @@ const handleSubmit = async () => {
         placeholder="••••••••"
       />
     </div>
+        <div class="text-right">
+      <RouterLink
+        to="/forgot-password"
+        class="text-sm font-semibold text-primary hover:underline"
+      >
+        ¿Olvidaste tu contraseña?
+      </RouterLink>
+    </div>
 <p
   v-if="errorMessage"
   role="alert"
