@@ -4,6 +4,8 @@ import { useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cart'
 import { useAuthStore } from '../stores/auth'
 import { canAccess } from '../router/guards'
+import UserMenu from './UserMenu.vue'
+import UserIdentity from './UserIdentity.vue'
 import logo from '../assets/logo.png'
 
 const router = useRouter()
@@ -27,8 +29,6 @@ const visibleLinks = computed(() =>
 navLinks.filter((link) => canAccess(router.resolve(link.to), authStore.role))
 )
 
-  const canSeeProfile = computed(() => canAccess(router.resolve({ name: 'perfil' }), authStore.role))
-
 function toggleMenu() {
   isMenuOpen.value = !isMenuOpen.value
 }
@@ -48,7 +48,7 @@ async function handleLogout() {
   <header
     class="fixed top-0 left-0 z-50 w-full border-b border-[#C4C4C4] bg-[#E5E5E5]/95 shadow-sm backdrop-blur-xl"
   >
-    <div class="mx-auto flex h-16 max-w-[1200px] items-center justify-between gap-4 px-5">
+    <div class="mx-auto flex h-16 max-w-300 items-center justify-between gap-4 px-5">
       <div class="flex items-center gap-6">
         <router-link
           :to="{ name: 'carta' }"
@@ -117,21 +117,11 @@ async function handleLogout() {
         v-else
         class="hidden items-center gap-2 xl:flex"
       >
-        <router-link
-        v-if="canSeeProfile"
-          :to="{ name: 'perfil' }"
-          class="rounded-lg px-3 py-2 text-sm font-semibold text-on-surface-variant transition-colors hover:text-primary"
-        >
-          Perfil
-        </router-link>
-
-        <button
-          type="button"
-          class="rounded-lg bg-primary-container px-4 py-2 text-sm font-semibold text-on-primary-container transition hover:opacity-90"
-          @click="handleLogout"
-        >
-          Cerrar sesión
-        </button>
+      <UserMenu
+          :user="authStore.user"
+          :role="authStore.role"
+          @logout="handleLogout"
+        />
       </div>
 
       <button
@@ -192,16 +182,8 @@ async function handleLogout() {
 
       <div
         v-else
-        class="mt-2 flex flex-col gap-2 border-t border-[#C4C4C4] pt-3"
-      >
-        <router-link
-        v-if="canSeeProfile"
-          :to="{ name: 'perfil' }"
-          class="rounded px-3 py-2 text-sm font-semibold text-on-surface-variant transition-colors hover:text-primary"
-          @click="closeMenu"
-        >
-          Perfil
-        </router-link>
+        class="mt-2 flex flex-col gap-2 border-t border-[#C4C4C4] pt-3">
+                <UserIdentity :user="authStore.user" :role="authStore.role" class="px-3 py-2" />
 
         <button
           type="button"
