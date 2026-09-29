@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, reactive, watch, onMounted } from 'vue'
-import { getAdminProducts, updateProduct } from '../services/products.service'
+import { getAdminProducts, updateProduct, createProduct } from '../services/products.service'
 import { PRODUCT_CATEGORIES, CATEGORY_LABELS } from '../constants/productCategories'
 import PaginationControl from './PaginationControl.vue'
 import LoadingSpinner from './LoadingSpinner.vue'
@@ -16,6 +16,8 @@ function categoryLabel(category) {
 
 const LOW_STOCK_THRESHOLD = 5
 const TABLE_PAGE_SIZE = 7
+const DEFAULT_DISCOUNT = 0
+const HTTP_CONFLICT = 409
 
 const products = ref([])
 const isLoading = ref(false)
@@ -110,9 +112,11 @@ function confirmDelete() {
 // --- Añadir producto ---
 const showAddForm = ref(false)
 const addFormError = ref('')
+const isSavingProduct = ref(false)
 const newProduct = reactive({
   name: '',
   category: PRODUCT_CATEGORIES.ESPECIALES,
+  imageUrl: '',
   price: '',
   stock: '',
   description: '',
@@ -121,6 +125,7 @@ const newProduct = reactive({
 function openAddForm() {
   newProduct.name = ''
   newProduct.category = PRODUCT_CATEGORIES.ESPECIALES
+  newProduct.imageUrl = ''
   newProduct.price = ''
   newProduct.stock = ''
   newProduct.description = ''
@@ -132,12 +137,18 @@ function closeAddForm() {
   showAddForm.value = false
 }
 
-function submitAddForm() {
+async function submitAddForm() {
   const priceNumber = parseFloat(newProduct.price)
   const stockNumber = parseInt(newProduct.stock, 10)
 
-  if (!newProduct.name.trim() || !newProduct.description.trim() || newProduct.price === '' || newProduct.stock === '') {
-    addFormError.value = 'Completa nombre, precio, stock inicial y descripción.'
+  if (
+    !newProduct.name.trim() ||
+    !newProduct.imageUrl.trim() ||
+    !newProduct.description.trim() ||
+    newProduct.price === '' ||
+    newProduct.stock === ''
+  ) {
+    addFormError.value = 'Completa nombre, imagen, precio, stock inicial y descripción.'
     return
   }
   if (isNaN(priceNumber) || priceNumber <= 0) {
@@ -149,19 +160,31 @@ function submitAddForm() {
     return
   }
 
-  const nextId = products.value.length > 0 ? Math.max(...products.value.map((p) => p.id)) + 1 : 1
-
-  products.value.push({
-    id: nextId,
-    name: newProduct.name.trim(),
-    description: newProduct.description.trim(),
-    category: newProduct.category,
-    price: priceNumber,
-    stock: stockNumber,
-    available: true,
-  })
-
-  showAddForm.value = false
+  addFormError.value = ''
+  isSavingProduct.value = true
+  try {
+    const createdProduct = await createProduct({
+      name: newProduct.name.trim(),
+      category: newProduct.category,
+      description: newProduct.description.trim(),
+      imageUrl: newProduct.imageUrl.trim(),
+      price: priceNumber,
+      discount: DEFAULT_DISCOUNT,
+      available: true,
+      exclusive: false,
+      stock: stockNumber,
+    })
+    products.value.push(createdProduct)
+    showAddForm.value = false
+  } catch (err) {
+    addFormError.value =
+      err.response?.status === HTTP_CONFLICT
+        ? 'Ya existe un producto con ese nombre.'
+        : 'No se ha podido guardar el producto. Inténtalo de nuevo.'
+    console.error('[AdminProductsPanel] Error al crear el producto:', err)
+  } finally {
+    isSavingProduct.value = false
+  }
 }
 
 // --- Editar producto (nombre, categoría, precio, stock, descripción) ---
@@ -435,6 +458,16 @@ function submitEditProduct() {
           </div>
 
           <div>
+            <label class="block text-xs font-semibold text-on-surface-variant mb-1">Imagen (nombre del archivo)</label>
+            <input
+              v-model="newProduct.imageUrl"
+              type="text"
+              class="w-full px-3 py-2 rounded-lg border border-outline text-sm outline-none focus:border-primary"
+              placeholder="Ej. merge-nigiri.png"
+            />
+          </div>
+
+          <div>
             <label class="block text-xs font-semibold text-on-surface-variant mb-1">Categoría</label>
             <select
               v-model="newProduct.category"
@@ -491,9 +524,10 @@ function submitEditProduct() {
             </button>
             <button
               type="submit"
-              class="px-4 py-2 rounded-lg bg-primary text-on-primary text-sm font-semibold hover:opacity-90 transition"
+              :disabled="isSavingProduct"
+              class="px-4 py-2 rounded-lg bg-primary text-on-primary text-sm font-semibold hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Guardar
+              {{ isSavingProduct ? 'Guardando...' : 'Guardar' }}
             </button>
           </div>
         </form>

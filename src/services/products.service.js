@@ -39,3 +39,8 @@ export async function updateProduct(id, changes) {
   const response = await api.patch(`${PRODUCTS_ENDPOINT}/${id}`, changes)
   return response.data
 }
+
+export async function createProduct(product) {
+  const response = await api.post(PRODUCTS_ENDPOINT, product)
+  return response.data
+}
