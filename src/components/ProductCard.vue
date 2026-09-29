@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
 
 // Recibe un producto y emite add-to-cart con la cantidad elegida.
 // No conoce el store de la cesta (eso llega en GSF-06): queda desacoplado.
@@ -13,6 +13,12 @@ const props = defineProps({
 const emit = defineEmits(['add-to-cart'])
 
 const quantity = ref(1)
+
+// Estado de feedback visual tras pulsar "Añadir": se activa al confirmar
+// y se desactiva solo, pasado un tiempo, sin bloquear nada más de la tarjeta.
+const justAdded = ref(false)
+const FEEDBACK_DURATION_MS = 1500
+let feedbackTimeoutId = null
 
 const formattedPrice = computed(() =>
   props.product.price.toLocaleString('es-ES', {
@@ -34,7 +40,19 @@ function decreaseQuantity() {
 function handleAddToCart() {
   emit('add-to-cart', { product: props.product, quantity: quantity.value })
   quantity.value = 1
+
+  justAdded.value = true
+  clearTimeout(feedbackTimeoutId)
+  feedbackTimeoutId = setTimeout(() => {
+    justAdded.value = false
+  }, FEEDBACK_DURATION_MS)
 }
+
+// Evita que el timeout intente tocar un componente ya destruido
+// (por ejemplo, si el usuario cambia de página justo tras pulsar).
+onUnmounted(() => {
+  clearTimeout(feedbackTimeoutId)
+})
 </script>
 
 <template>
@@ -77,10 +95,20 @@ function handleAddToCart() {
           </button>
         </div>
 
-        <button type="button" class="product-card__add-btn" @click="handleAddToCart">
-          Añadir
+        <button
+          type="button"
+          class="product-card__add-btn"
+          :class="{ 'product-card__add-btn--added': justAdded }"
+          :disabled="justAdded"
+          @click="handleAddToCart"
+        >
+          {{ justAdded ? 'Añadido ✓' : 'Añadir' }}
         </button>
       </div>
+
+      <span class="sr-only" role="status" aria-live="polite">
+        {{ justAdded ? `${product.name} añadido a la cesta` : '' }}
+      </span>
     </div>
   </article>
 </template>
@@ -118,6 +146,9 @@ function handleAddToCart() {
   @apply w-4 text-center text-sm;
 }
 .product-card__add-btn {
-  @apply rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-on-primary transition-colors hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary;
+  @apply rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-on-primary transition-colors hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-80;
+}
+.product-card__add-btn--added {
+  @apply bg-primary;
 }
 </style>
