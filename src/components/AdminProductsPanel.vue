@@ -1,35 +1,90 @@
 <script setup>
-import { ref, computed, reactive } from 'vue'
+import { ref, computed, reactive, watch, onMounted } from 'vue'
+import { getAdminProducts, updateProduct } from '../services/products.service'
+import { PRODUCT_CATEGORIES, CATEGORY_LABELS } from '../constants/productCategories'
+import PaginationControl from './PaginationControl.vue'
+import LoadingSpinner from './LoadingSpinner.vue'
 
-const categories = ['Todas', 'Especialidades', 'Bebidas', 'Postres']
-const activeCategory = ref('Todas')
+const ALL_CATEGORIES = 'ALL'
+const categoryOptions = Object.values(PRODUCT_CATEGORIES)
+const categories = [ALL_CATEGORIES, ...categoryOptions]
+const activeCategory = ref(ALL_CATEGORIES)
+
+function categoryLabel(category) {
+  return category === ALL_CATEGORIES ? 'Todas' : CATEGORY_LABELS[category]
+}
 
 const LOW_STOCK_THRESHOLD = 5
+const TABLE_PAGE_SIZE = 7
 
-// Datos de ejemplo (mock) mientras el backend no tiene los endpoints listos (GS-22 / GS-24)
-const products = ref([
-  { id: 1, name: 'Deploy Deluxe', description: 'Selección del chef, 20 piezas. Solo clientes registrados.', category: 'Especialidades', price: 29.90, active: true, stock: 12 },
-  { id: 2, name: 'Branch Gyozas', description: 'Gyozas caseras de cerdo y jengibre. 5 unidades al vapor.', category: 'Especialidades', price: 7.80, active: true, stock: 4 },
-  { id: 3, name: 'Sake Junmai', description: 'Copa de sake seco tradicional servido frío.', category: 'Bebidas', price: 6.50, active: false, stock: 0 },
-  { id: 4, name: 'Cerveza Asahi', description: 'Botellín 33 cl. Cerveza japonesa Super Dry.', category: 'Bebidas', price: 4.20, active: true, stock: 30 },
-  { id: 5, name: 'Cheesecake de Yuzu', description: 'Tarta cremosa con coulis cítrico de yuzu.', category: 'Postres', price: 6.20, active: true, stock: 3 },
-])
+const products = ref([])
+const isLoading = ref(false)
+const loadError = ref('')
+const actionError = ref('')
+
+async function loadProducts() {
+  isLoading.value = true
+  loadError.value = ''
+  try {
+    products.value = await getAdminProducts()
+  } catch (err) {
+    loadError.value = 'No se han podido cargar los productos. Inténtalo de nuevo más tarde.'
+    console.error('[AdminProductsPanel] Error al obtener los productos:', err)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(loadProducts)
 
 const categoryCounts = computed(() => {
-  const counts = { Todas: products.value.length }
-  for (const cat of categories.slice(1)) {
+  const counts = { [ALL_CATEGORIES]: products.value.length }
+  for (const cat of categoryOptions) {
     counts[cat] = products.value.filter((p) => p.category === cat).length
   }
   return counts
 })
 
 const filteredProducts = computed(() => {
-  if (activeCategory.value === 'Todas') return products.value
+  if (activeCategory.value === ALL_CATEGORIES) return products.value
   return products.value.filter((p) => p.category === activeCategory.value)
 })
 
-function toggleActive(product) {
-  product.active = !product.active
+// --- Paginación de la tabla ---
+const currentPage = ref(1)
+
+const totalPages = computed(() =>
+  Math.max(1, Math.ceil(filteredProducts.value.length / TABLE_PAGE_SIZE))
+)
+
+const paginatedProducts = computed(() => {
+  const start = (currentPage.value - 1) * TABLE_PAGE_SIZE
+  return filteredProducts.value.slice(start, start + TABLE_PAGE_SIZE)
+})
+
+function selectCategory(category) {
+  activeCategory.value = category
+  currentPage.value = 1
+}
+
+function goToPage(page) {
+  currentPage.value = page
+}
+
+// Si se borran productos y la página actual deja de existir, vuelve a la última
+watch(totalPages, (newTotal) => {
+  if (currentPage.value > newTotal) currentPage.value = newTotal
+})
+
+async function toggleActive(product) {
+  actionError.value = ''
+  try {
+    const updatedProduct = await updateProduct(product.id, { available: !product.available })
+    product.available = updatedProduct.available
+  } catch (err) {
+    actionError.value = 'No se ha podido cambiar el estado del producto. Inténtalo de nuevo.'
+    console.error('[AdminProductsPanel] Error al cambiar el estado:', err)
+  }
 }
 
 function isLowStock(product) {
@@ -57,7 +112,7 @@ const showAddForm = ref(false)
 const addFormError = ref('')
 const newProduct = reactive({
   name: '',
-  category: 'Especialidades',
+  category: PRODUCT_CATEGORIES.ESPECIALES,
   price: '',
   stock: '',
   description: '',
@@ -65,7 +120,7 @@ const newProduct = reactive({
 
 function openAddForm() {
   newProduct.name = ''
-  newProduct.category = 'Especialidades'
+  newProduct.category = PRODUCT_CATEGORIES.ESPECIALES
   newProduct.price = ''
   newProduct.stock = ''
   newProduct.description = ''
@@ -103,7 +158,7 @@ function submitAddForm() {
     category: newProduct.category,
     price: priceNumber,
     stock: stockNumber,
-    active: true,
+    available: true,
   })
 
   showAddForm.value = false
@@ -113,7 +168,7 @@ function submitAddForm() {
 const editingProduct = ref(null)
 const editProductForm = reactive({
   name: '',
-  category: 'Especialidades',
+  category: PRODUCT_CATEGORIES.ESPECIALES,
   price: '',
   stock: '',
   description: '',
@@ -221,7 +276,7 @@ function submitEditProduct() {
         v-for="cat in categories"
         :key="cat"
         type="button"
-        @click="activeCategory = cat"
+        @click="selectCategory(cat)"
         :class="[
           'px-3 py-1.5 rounded-full text-sm font-semibold border transition',
           activeCategory === cat
@@ -229,12 +284,16 @@ function submitEditProduct() {
             : 'bg-surface-variant text-on-surface-variant border-outline hover:border-primary/50',
         ]"
       >
-        {{ cat }} ({{ categoryCounts[cat] }})
+        {{ categoryLabel(cat) }} ({{ categoryCounts[cat] }})
       </button>
     </div>
 
+    <p v-if="actionError" class="mb-3 text-error text-sm">{{ actionError }}</p>
+
     <!-- Tabla de productos -->
-    <div class="overflow-x-auto">
+    <LoadingSpinner v-if="isLoading" label="Cargando productos..." />
+    <p v-else-if="loadError" class="py-6 text-center text-error">{{ loadError }}</p>
+    <div v-else class="overflow-x-auto">
       <table class="w-full text-sm">
         <thead>
           <tr class="text-left text-on-surface-variant uppercase text-xs border-b border-outline">
@@ -253,7 +312,7 @@ function submitEditProduct() {
             </td>
           </tr>
           <tr
-            v-for="product in filteredProducts"
+            v-for="product in paginatedProducts"
             :key="product.id"
             class="border-b border-outline last:border-0"
           >
@@ -261,7 +320,7 @@ function submitEditProduct() {
               <div class="font-semibold text-on-surface">{{ product.name }}</div>
               <div class="text-on-surface-variant text-xs">{{ product.description }}</div>
             </td>
-            <td class="py-3 pr-3 text-on-surface-variant">{{ product.category }}</td>
+            <td class="py-3 pr-3 text-on-surface-variant">{{ categoryLabel(product.category) }}</td>
             <td class="py-3 pr-3 font-semibold text-on-surface">{{ product.price.toFixed(2) }} €</td>
             <td class="py-3 pr-3">
               <span
@@ -278,11 +337,11 @@ function submitEditProduct() {
               <span
                 :class="[
                   'inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-semibold',
-                  product.active ? 'bg-secondary-container text-secondary' : 'bg-surface-variant text-on-surface-variant',
+                  product.available ? 'bg-secondary-container text-secondary' : 'bg-surface-variant text-on-surface-variant',
                 ]"
               >
-                <span :class="['w-1.5 h-1.5 rounded-full', product.active ? 'bg-secondary' : 'bg-on-surface-variant']"></span>
-                {{ product.active ? 'Activo' : 'Desactivado' }}
+                <span :class="['w-1.5 h-1.5 rounded-full', product.available ? 'bg-secondary' : 'bg-on-surface-variant']"></span>
+                {{ product.available ? 'Activo' : 'Desactivado' }}
               </span>
             </td>
             <td class="py-3 pr-3 text-right whitespace-nowrap">
@@ -292,7 +351,7 @@ function submitEditProduct() {
                   @click="toggleActive(product)"
                   class="text-xs font-semibold px-3 py-1.5 rounded-lg border border-outline hover:bg-surface-container-high transition"
                 >
-                  {{ product.active ? 'Desactivar' : 'Activar' }}
+                  {{ product.available ? 'Desactivar' : 'Activar' }}
                 </button>
                 <button
                   type="button"
@@ -317,6 +376,13 @@ function submitEditProduct() {
           </tr>
         </tbody>
       </table>
+
+      <PaginationControl
+        v-if="totalPages > 1"
+        :current-page="currentPage"
+        :total-pages="totalPages"
+        @change-page="goToPage"
+      />
     </div>
 
     <!-- Modal de confirmación de borrado -->
@@ -374,7 +440,7 @@ function submitEditProduct() {
               v-model="newProduct.category"
               class="w-full px-3 py-2 rounded-lg border border-outline text-sm outline-none focus:border-primary"
             >
-              <option v-for="cat in categories.slice(1)" :key="cat" :value="cat">{{ cat }}</option>
+              <option v-for="cat in categoryOptions" :key="cat" :value="cat">{{ categoryLabel(cat) }}</option>
             </select>
           </div>
 
@@ -458,7 +524,7 @@ function submitEditProduct() {
               v-model="editProductForm.category"
               class="w-full px-3 py-2 rounded-lg border border-outline text-sm outline-none focus:border-primary"
             >
-              <option v-for="cat in categories.slice(1)" :key="cat" :value="cat">{{ cat }}</option>
+              <option v-for="cat in categoryOptions" :key="cat" :value="cat">{{ categoryLabel(cat) }}</option>
             </select>
           </div>
 
