@@ -50,6 +50,12 @@ const routes = [
     component: () => import('../views/LoginView.vue'),
     meta: { roles: [null] },
   },
+    {
+    path: '/forgot-password',
+    name: 'forgot-password',
+    component: () => import('../views/ForgotPasswordView.vue'),
+    meta: { roles: [null] },
+  },
   {
     path: '/register',
     name: 'register',
