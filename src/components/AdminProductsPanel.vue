@@ -204,6 +204,7 @@ const editProductOriginal = reactive({
   description: '',
 })
 const editProductError = ref('')
+const isSavingEdit = ref(false)
 
 function openEditProduct(product) {
   editingProduct.value = product
@@ -211,14 +212,14 @@ function openEditProduct(product) {
   editProductForm.name = product.name
   editProductForm.category = product.category
   editProductForm.price = product.price
-  editProductForm.stock = product.stock
+  editProductForm.stock = product.stock ?? 0
   editProductForm.description = product.description
 
   // Copia aparte de los valores originales, para poder comparar y saber si algo cambió
   editProductOriginal.name = product.name
   editProductOriginal.category = product.category
   editProductOriginal.price = product.price
-  editProductOriginal.stock = product.stock
+  editProductOriginal.stock = product.stock ?? 0
   editProductOriginal.description = product.description
 
   editProductError.value = ''
@@ -250,7 +251,7 @@ function decrementEditStock() {
   editProductForm.stock = next < 0 ? 0 : next
 }
 
-function submitEditProduct() {
+async function submitEditProduct() {
   const priceNumber = parseFloat(editProductForm.price)
   const stockNumber = parseInt(editProductForm.stock, 10)
 
@@ -267,13 +268,24 @@ function submitEditProduct() {
     return
   }
 
-  editingProduct.value.name = editProductForm.name.trim()
-  editingProduct.value.category = editProductForm.category
-  editingProduct.value.price = priceNumber
-  editingProduct.value.stock = stockNumber
-  editingProduct.value.description = editProductForm.description.trim()
-
-  editingProduct.value = null
+  editProductError.value = ''
+  isSavingEdit.value = true
+  try {
+    const updatedProduct = await updateProduct(editingProduct.value.id, {
+      name: editProductForm.name.trim(),
+      category: editProductForm.category,
+      price: priceNumber,
+      description: editProductForm.description.trim(),
+      stock: stockNumber,
+    })
+    Object.assign(editingProduct.value, updatedProduct)
+    editingProduct.value = null
+  } catch (err) {
+    editProductError.value = 'No se han podido guardar los cambios. Inténtalo de nuevo.'
+    console.error('[AdminProductsPanel] Error al editar el producto:', err)
+  } finally {
+    isSavingEdit.value = false
+  }
 }
 </script>
 
@@ -625,9 +637,10 @@ function submitEditProduct() {
             <button
               v-if="hasEditChanges"
               type="submit"
-              class="px-4 py-2 rounded-lg bg-secondary text-white text-sm font-semibold hover:opacity-90 transition"
+              :disabled="isSavingEdit"
+              class="px-4 py-2 rounded-lg bg-secondary text-white text-sm font-semibold hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Guardar cambios
+              {{ isSavingEdit ? 'Guardando...' : 'Guardar cambios' }}
             </button>
           </div>
         </form>
