@@ -1,60 +1,64 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { ROLES } from '../constants/roles'
+import { canAccess, getRedirectFor, isUnknownRoute } from './guards'
+
+const { GUEST, CUSTOMER, ADMIN, COOK, DELIVERY } = ROLES
 
 const routes = [
   {
     path: '/',
     name: 'carta',
     component: () => import('../views/CartaView.vue'),
-    meta: { roles: [null, 'cliente', 'cocina', 'reparto', 'admin'] },
+    meta: { roles: [GUEST, CUSTOMER, ADMIN, COOK, DELIVERY] },
   },
   {
     path: '/mi-pedido',
     name: 'mi-pedido',
     component: () => import('../views/MiPedidoView.vue'),
-    meta: { roles: ['cliente'] },
+    meta: { roles: [GUEST, CUSTOMER] },
   },
   {
     path: '/perfil',
     name: 'perfil',
     component: () => import('../views/PerfilView.vue'),
-    meta: { roles: ['cliente', 'cocina', 'reparto', 'admin'] },
+    meta: { roles: [CUSTOMER, ADMIN] },
   },
   {
     path: '/cesta',
     name: 'cesta',
     component: () => import('../views/CestaView.vue'),
-    meta: { roles: [null, 'cliente'] },
+    meta: { roles: [CUSTOMER] },
   },
   {
     path: '/cocina',
     name: 'cocina',
     component: () => import('../views/CocinaView.vue'),
-    meta: { roles: ['cocina'] },
+    meta: { roles: [COOK, ADMIN] },
   },
   {
     path: '/reparto',
     name: 'reparto',
     component: () => import('../views/RepartoView.vue'),
-    meta: { roles: ['reparto'] },
+    meta: { roles: [DELIVERY, ADMIN] },
   },
   {
     path: '/admin',
     name: 'admin',
     component: () => import('../views/AdminView.vue'),
-    meta: { roles: ['admin'] },
+    meta: { roles: [ADMIN] },
   },
   {
     path: '/login',
     name: 'login',
     component: () => import('../views/LoginView.vue'),
-    meta: { roles: [null] },
+    meta: { roles: [GUEST] },
   },
   {
     path: '/register',
     name: 'register',
     component: () => import('../views/RegisterView.vue'),
-    meta: { roles: [null] },
+    meta: { roles: [GUEST] },
   },
 ]
 
@@ -63,13 +67,12 @@ const router = createRouter({
   routes,
 })
 
-// TODO: reactivar cuando esté implementado el control de roles definitivo
-// router.beforeEach((to) => {
-//   const authStore = useAuthStore()
-//
-//   if (to.meta.roles && !to.meta.roles.includes(authStore.role)) {
-//     return { name: 'carta' }
-//   }
-// })
+router.beforeEach((to) => {
+  const authStore = useAuthStore()
+
+  if (isUnknownRoute(to) || !canAccess(to, authStore.role)) {
+    return getRedirectFor(authStore.role)
+  }
+})
 
 export default router

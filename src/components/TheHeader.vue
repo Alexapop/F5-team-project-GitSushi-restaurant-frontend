@@ -1,9 +1,9 @@
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cart'
 import { useAuthStore } from '../stores/auth'
-import { ROLE_RESTRICTIONS_ENABLED } from '../constants/auth'
+import { canAccess } from '../router/guards'
 import logo from '../assets/logo.png'
 
 const router = useRouter()
@@ -13,19 +13,21 @@ const authStore = useAuthStore()
 const isMenuOpen = ref(false)
 
 const navLinks = [
-  { to: { name: 'carta' }, label: 'Carta', roles: [null, 'cliente', 'cocina', 'reparto', 'admin'] },
-  { to: { name: 'mi-pedido' }, label: 'Mi pedido', roles: ['cliente'] },
-  { to: { name: 'perfil' }, label: 'Perfil', roles: ['cliente', 'admin'] },
-  { to: { name: 'cesta' }, label: 'Cesta', roles: [null, 'cliente'] },
-  { to: { name: 'cocina' }, label: 'Cocina', roles: ['cocina', 'admin'] },
-  { to: { name: 'reparto' }, label: 'Reparto', roles: ['reparto', 'admin'] },
-  { to: { name: 'admin' }, label: 'Admin', roles: ['admin'] },
-]
+    { to: { name: 'carta' }, label: 'Carta' },
+    { to: { name: 'mi-pedido' }, label: 'Mi pedido' },
+    { to: { name: 'perfil' }, label: 'Perfil' },
+    { to: { name: 'cesta' }, label: 'Cesta' },
+    { to: { name: 'cocina' }, label: 'Cocina' },
+    { to: { name: 'reparto' }, label: 'Reparto' },
+    { to: { name: 'admin' }, label: 'Admin' },
+  ]
 
-function isAllowed(link) {
-  if (!ROLE_RESTRICTIONS_ENABLED) return true
-  return link.roles.includes(authStore.role)
-}
+// Los permisos se leen del router (meta.roles): una sola fuente de verdad.
+const visibleLinks = computed(() =>
+navLinks.filter((link) => canAccess(router.resolve(link.to), authStore.role))
+)
+
+  const canSeeProfile = computed(() => canAccess(router.resolve({ name: 'perfil' }), authStore.role))
 
 function toggleMenu() {
   isMenuOpen.value = !isMenuOpen.value
@@ -74,13 +76,11 @@ async function handleLogout() {
           class="hidden items-center gap-1 rounded-lg border border-[#C4C4C4] bg-surface/70 p-1 shadow-sm xl:flex"
         >
           <router-link
-            v-for="link in navLinks"
+            v-for="link in visibleLinks"
             :key="link.label"
             :to="link.to"
             class="nav-link flex items-center gap-1.5 rounded px-3 py-1.5 text-sm text-on-surface-variant transition-colors hover:bg-surface/80 hover:text-on-surface"
-            :class="{ 'nav-link--inactive': !isAllowed(link) }"
             active-class="bg-surface text-primary font-semibold shadow-sm"
-            @click="!isAllowed(link) && $event.preventDefault()"
           >
             <span>{{ link.label }}</span>
 
@@ -118,6 +118,7 @@ async function handleLogout() {
         class="hidden items-center gap-2 xl:flex"
       >
         <router-link
+        v-if="canSeeProfile"
           :to="{ name: 'perfil' }"
           class="rounded-lg px-3 py-2 text-sm font-semibold text-on-surface-variant transition-colors hover:text-primary"
         >
@@ -151,13 +152,12 @@ async function handleLogout() {
       class="flex flex-col gap-1 border-t border-[#C4C4C4] bg-surface px-5 py-3 xl:hidden"
     >
       <router-link
-        v-for="link in navLinks"
+        v-for="link in visibleLinks"
         :key="link.label"
         :to="link.to"
         class="nav-link flex items-center gap-1.5 rounded px-3 py-2 text-sm text-on-surface-variant transition-colors hover:bg-surface-variant hover:text-on-surface"
-        :class="{ 'nav-link--inactive': !isAllowed(link) }"
         active-class="bg-surface-variant text-primary font-semibold"
-        @click="isAllowed(link) ? closeMenu() : $event.preventDefault()"
+        @click="closeMenu"
       >
         <span>{{ link.label }}</span>
 
@@ -195,6 +195,7 @@ async function handleLogout() {
         class="mt-2 flex flex-col gap-2 border-t border-[#C4C4C4] pt-3"
       >
         <router-link
+        v-if="canSeeProfile"
           :to="{ name: 'perfil' }"
           class="rounded px-3 py-2 text-sm font-semibold text-on-surface-variant transition-colors hover:text-primary"
           @click="closeMenu"
@@ -213,11 +214,3 @@ async function handleLogout() {
     </nav>
   </header>
 </template>
-
-<style scoped>
-.nav-link--inactive {
-  color: #b7b7b7 !important;
-  cursor: not-allowed;
-  pointer-events: none;
-}
-</style>
