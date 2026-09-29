@@ -1,5 +1,5 @@
 // src/components/ProductCard.test.js
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import ProductCard from './ProductCard.vue'
 
@@ -55,12 +55,35 @@ describe('ProductCard', () => {
 
     expect(wrapper.find('.product-card__quantity-value').text()).toBe('1')
   })
-  
+
   it('decreases the quantity when above 1', async () => {
   const wrapper = mount(ProductCard, { props: { product } })
   await wrapper.find('[aria-label="Aumentar cantidad"]').trigger('click')
   await wrapper.find('[aria-label="Reducir cantidad"]').trigger('click')
 
   expect(wrapper.find('.product-card__quantity-value').text()).toBe('1')
+})
+
+it('shows a confirmation on the button after adding to the cart', async () => {
+  const wrapper = mount(ProductCard, { props: { product } })
+  await wrapper.find('.product-card__add-btn').trigger('click')
+
+  const addBtn = wrapper.find('.product-card__add-btn')
+  expect(addBtn.text()).toBe('Añadido ✓')
+  expect(addBtn.attributes('disabled')).toBeDefined()
+})
+
+it('reverts the add button after the feedback delay', async () => {
+  vi.useFakeTimers({ shouldAdvanceTime: true })
+  const wrapper = mount(ProductCard, { props: { product } })
+  await wrapper.find('.product-card__add-btn').trigger('click')
+
+  await vi.advanceTimersByTimeAsync(1500)
+
+  const addBtn = wrapper.find('.product-card__add-btn')
+  expect(addBtn.text()).toBe('Añadir')
+  expect(addBtn.attributes('disabled')).toBeUndefined()
+
+  vi.useRealTimers()
 })
 })
