@@ -1,10 +1,17 @@
+import fs from 'fs'
 import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'vite'
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [vue(), tailwindcss()],
+  server: {
+    https: {
+      key: fs.readFileSync('../certs/localhost+2-key.pem'),
+      cert: fs.readFileSync('../certs/localhost+2.pem'),
+    },
+    port: 5173,
+  },
   test: {
     environment: 'jsdom',
     globals: true,
