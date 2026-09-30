@@ -24,7 +24,7 @@ const fields = [
   'city',
 ]
 
-function mountForm() {
+function mountForm(options = {}) {
   const pinia = createPinia()
   setActivePinia(pinia)
 
@@ -32,10 +32,11 @@ function mountForm() {
   authStore.user = { ...user }
 
   const wrapper = mount(ProfileForm, {
-    global: {
-      plugins: [pinia],
-    },
-  })
+  ...options,
+  global: {
+    plugins: [pinia],
+  },
+})
 
   return { wrapper, authStore }
 }
@@ -153,5 +154,23 @@ describe('ProfileForm', () => {
   await wrapper.get('form').trigger('submit')
 
   expect(wrapper.findAll('.profile-form__error')).toHaveLength(6)
+})
+it('enfoca el primer campo con error al enviar', async () => {
+  const { wrapper } = mountForm({
+    attachTo: document.body,
+  })
+
+  try {
+    await wrapper.get('#email').setValue('correo-invalido')
+    await wrapper.get('#city').setValue('')
+
+    await wrapper.get('form').trigger('submit')
+
+    expect(document.activeElement).toBe(
+      wrapper.get('#email').element
+    )
+  } finally {
+    wrapper.unmount()
+  }
 })
 })

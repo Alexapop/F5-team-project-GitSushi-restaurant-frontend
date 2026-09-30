@@ -1,8 +1,9 @@
 <script setup>
-import { computed, reactive, watch } from 'vue'
+import { computed, nextTick, reactive, ref, watch } from 'vue'
 import { useAuthStore } from '../../stores/auth'
 
 const authStore = useAuthStore()
+const formElement = ref(null)
 
 const form = reactive({
   firstName: '',
@@ -79,8 +80,16 @@ function validateForm() {
   return Object.keys(errors.value).length === 0
 }
 
-function handleSubmit() {
-  if (!validateForm()) return
+async function handleSubmit() {
+  if (!validateForm()) {
+    await nextTick()
+
+    formElement.value
+      ?.querySelector('[aria-invalid="true"]')
+      ?.focus()
+
+    return
+  }
 
   // El guardado se conectará cuando esté disponible el endpoint.
 }
@@ -91,10 +100,12 @@ function handleSubmit() {
     <h2 class="profile-form__title">Datos personales</h2>
 
 <form
+  ref="formElement"
   class="profile-form__fields"
   novalidate
   @submit.prevent="handleSubmit"
->      <div class="profile-form__row">
+>   
+   <div class="profile-form__row">
         <div>
           <label for="firstName">Nombre</label>
           <input
