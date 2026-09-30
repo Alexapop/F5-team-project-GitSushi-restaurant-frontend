@@ -24,6 +24,10 @@ describe('router - acceso por rol', () => {
     expect(await navigateAs(ROLES.GUEST, '/admin')).toBe('login')
   })
 
+  it('el invitado entra en la cesta para poder pedir en sala sin registrarse', async () => {
+    expect(await navigateAs(ROLES.GUEST, '/cesta')).toBe('cesta')
+  })
+
   it('el cliente entra en la cesta', async () => {
     expect(await navigateAs(ROLES.CUSTOMER, '/cesta')).toBe('cesta')
   })
