@@ -6,6 +6,7 @@ import PaginationControl from './PaginationControl.vue'
 import LoadingSpinner from './LoadingSpinner.vue'
 import ProductFormModal from './ProductFormModal.vue'
 import AdminProductsTable from './AdminProductsTable.vue'
+import ConfirmDialog from './ConfirmDialog.vue'
 import { PRODUCT_FORM_MODES } from '../constants/productFormModes'
 
 const ALL_CATEGORIES = 'ALL'
@@ -213,35 +214,17 @@ async function handleFormSubmit(formData) {
       />
     </div>
 
-    <!-- Modal de confirmación de borrado -->
-    <div
+    <!-- Confirmación de borrado -->
+    <ConfirmDialog
       v-if="productToDelete"
-      class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4"
+      title="¿Eliminar producto?"
+      confirm-label="Eliminar"
+      @confirm="confirmDelete"
+      @cancel="cancelDelete"
     >
-      <div class="bg-white rounded-xl p-6 max-w-sm w-full shadow-lg">
-        <h3 class="text-lg font-heading font-bold text-on-surface mb-2">¿Eliminar producto?</h3>
-        <p class="text-on-surface-variant text-sm mb-5">
-          Esta acción es permanente y no se puede deshacer. Vas a eliminar
-          <span class="font-semibold text-on-surface">{{ productToDelete.name }}</span> de la carta.
-        </p>
-        <div class="flex justify-end gap-3">
-          <button
-            type="button"
-            @click="cancelDelete"
-            class="px-4 py-2 rounded-lg border border-outline text-on-surface text-sm font-semibold hover:bg-surface-container-high transition"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            @click="confirmDelete"
-            class="px-4 py-2 rounded-lg bg-error text-white text-sm font-semibold hover:opacity-90 transition"
-          >
-            Eliminar
-          </button>
-        </div>
-      </div>
-    </div>
+      Esta acción es permanente y no se puede deshacer. Vas a eliminar
+      <strong>{{ productToDelete.name }}</strong> de la carta.
+    </ConfirmDialog>
 
     <!-- Formulario de producto (añadir y editar) -->
     <ProductFormModal
