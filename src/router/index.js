@@ -28,7 +28,7 @@ const routes = [
     path: '/cesta',
     name: 'cesta',
     component: () => import('../views/CestaView.vue'),
-    meta: { roles: [CUSTOMER] },
+    meta: { roles: [GUEST, CUSTOMER] },
   },
   {
     path: '/cocina',
