@@ -1,6 +1,7 @@
 <script setup>
 import { computed, nextTick, reactive, ref, watch } from 'vue'
 import { useAuthStore } from '../../stores/auth'
+import VoiceDictationButton from '../VoiceDictationButton.vue'
 
 const authStore = useAuthStore()
 const formElement = ref(null)
@@ -49,6 +50,7 @@ const fields = [
     type: 'text',
     autocomplete: 'address-level2',
     requiredMessage: 'La ciudad es obligatoria.',
+    voiceInput: true,
   },
 ]
 
@@ -109,6 +111,11 @@ const errors = computed(() => {
 
 function validateField(field) {
   touched[field] = true
+}
+
+function handleDictation(field, transcript) {
+  form[field] = transcript
+  validateField(field)
 }
 
 function validateForm() {
@@ -183,23 +190,33 @@ async function handleSubmit() {
         >
           <label :for="field.name">{{ field.label }}</label>
 
-          <input
-            :id="field.name"
-            v-model="form[field.name]"
-            :name="field.name"
-            :type="field.type"
-            :autocomplete="field.autocomplete"
-            required
-            :aria-invalid="
-              Boolean(touched[field.name] && errors[field.name])
-            "
-            :aria-describedby="
-              touched[field.name] && errors[field.name]
-                ? `${field.name}-error`
-                : undefined
-            "
-            @blur="validateField(field.name)"
-          />
+          <div
+            :class="{ 'profile-form__voice-control': field.voiceInput }"
+          >
+            <input
+              :id="field.name"
+              v-model="form[field.name]"
+              :name="field.name"
+              :type="field.type"
+              :autocomplete="field.autocomplete"
+              required
+              :aria-invalid="
+                Boolean(touched[field.name] && errors[field.name])
+              "
+              :aria-describedby="
+                touched[field.name] && errors[field.name]
+                  ? `${field.name}-error`
+                  : undefined
+              "
+              @blur="validateField(field.name)"
+            />
+
+            <VoiceDictationButton
+              v-if="field.voiceInput"
+              :field-label="field.label"
+              @transcript="handleDictation(field.name, $event)"
+            />
+          </div>
 
           <p
             v-if="touched[field.name] && errors[field.name]"
@@ -277,6 +294,10 @@ async function handleSubmit() {
   @apply w-full rounded-lg border border-outline
     bg-surface-container px-4 py-3 outline-none
     transition focus:border-primary;
+}
+
+.profile-form__voice-control {
+  @apply grid grid-cols-[1fr_auto] items-center gap-x-2 gap-y-1;
 }
 
 .profile-form input[aria-invalid="true"] {
