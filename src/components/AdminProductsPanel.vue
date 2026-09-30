@@ -4,6 +4,7 @@ import { getAdminProducts, updateProduct, createProduct } from '../services/prod
 import { PRODUCT_CATEGORIES, CATEGORY_LABELS } from '../constants/productCategories'
 import PaginationControl from './PaginationControl.vue'
 import LoadingSpinner from './LoadingSpinner.vue'
+import { validateProductForm } from '../utils/productValidation'
 
 const ALL_CATEGORIES = 'ALL'
 const categoryOptions = Object.values(PRODUCT_CATEGORIES)
@@ -141,22 +142,9 @@ async function submitAddForm() {
   const priceNumber = parseFloat(newProduct.price)
   const stockNumber = parseInt(newProduct.stock, 10)
 
-  if (
-    !newProduct.name.trim() ||
-    !newProduct.imageUrl.trim() ||
-    !newProduct.description.trim() ||
-    newProduct.price === '' ||
-    newProduct.stock === ''
-  ) {
-    addFormError.value = 'Completa nombre, imagen, precio, stock inicial y descripción.'
-    return
-  }
-  if (isNaN(priceNumber) || priceNumber <= 0) {
-    addFormError.value = 'Ingresa un precio válido mayor a 0.'
-    return
-  }
-  if (isNaN(stockNumber) || stockNumber < 0) {
-    addFormError.value = 'Ingresa una cantidad de stock válida (0 o mayor).'
+  const validationError = validateProductForm(newProduct, { requireImage: true })
+  if (validationError) {
+    addFormError.value = validationError
     return
   }
 
@@ -255,16 +243,9 @@ async function submitEditProduct() {
   const priceNumber = parseFloat(editProductForm.price)
   const stockNumber = parseInt(editProductForm.stock, 10)
 
-  if (!editProductForm.name.trim() || !editProductForm.description.trim() || editProductForm.price === '' || editProductForm.stock === '') {
-    editProductError.value = 'Completa nombre, precio, stock y descripción.'
-    return
-  }
-  if (isNaN(priceNumber) || priceNumber <= 0) {
-    editProductError.value = 'Ingresa un precio válido mayor a 0.'
-    return
-  }
-  if (isNaN(stockNumber) || stockNumber < 0) {
-    editProductError.value = 'Ingresa una cantidad de stock válida (0 o mayor).'
+  const validationError = validateProductForm(editProductForm)
+  if (validationError) {
+    editProductError.value = validationError
     return
   }
 
