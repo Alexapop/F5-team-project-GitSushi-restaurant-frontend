@@ -1,8 +1,8 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useAdminProducts } from '../composables/useAdminProducts'
+import { useCategoryFilter } from '../composables/useCategoryFilter'
 import { usePagination } from '../composables/usePagination'
-import { PRODUCT_CATEGORIES, CATEGORY_LABELS } from '../constants/productCategories'
 import PaginationControl from './PaginationControl.vue'
 import LoadingSpinner from './LoadingSpinner.vue'
 import ProductFormModal from './ProductFormModal.vue'
@@ -14,15 +14,6 @@ import { PRODUCT_FORM_MODES } from '../constants/productFormModes'
 // Sección de gestión de productos del panel de administración.
 // Coordina las piezas: pide los datos al composable, filtra, pagina y decide
 // qué modal mostrar. Cada parte visual vive en su propio componente.
-
-const ALL_CATEGORIES = 'ALL'
-const categoryOptions = Object.values(PRODUCT_CATEGORIES)
-const categories = [ALL_CATEGORIES, ...categoryOptions]
-const activeCategory = ref(ALL_CATEGORIES)
-
-function categoryLabel(category) {
-  return category === ALL_CATEGORIES ? 'Todas' : CATEGORY_LABELS[category]
-}
 
 const TABLE_PAGE_SIZE = 7
 const HTTP_CONFLICT = 409
@@ -42,26 +33,13 @@ const actionError = ref('')
 
 onMounted(loadProducts)
 
-const categoryCounts = computed(() => {
-  const counts = { [ALL_CATEGORIES]: products.value.length }
-  for (const cat of categoryOptions) {
-    counts[cat] = products.value.filter((p) => p.category === cat).length
-  }
-  return counts
-})
-
-const categoryFilterOptions = computed(() =>
-  categories.map((category) => ({
-    value: category,
-    label: categoryLabel(category),
-    count: categoryCounts.value[category],
-  }))
-)
-
-const filteredProducts = computed(() => {
-  if (activeCategory.value === ALL_CATEGORIES) return products.value
-  return products.value.filter((p) => p.category === activeCategory.value)
-})
+// --- Filtro por categoría ---
+const {
+  activeCategory,
+  filterOptions: categoryFilterOptions,
+  filteredItems: filteredProducts,
+  setCategory,
+} = useCategoryFilter(products)
 
 // --- Paginación de la tabla ---
 const {
@@ -73,7 +51,7 @@ const {
 } = usePagination(filteredProducts, TABLE_PAGE_SIZE)
 
 function selectCategory(category) {
-  activeCategory.value = category
+  setCategory(category)
   resetPage()
 }
 
