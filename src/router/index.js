@@ -1,7 +1,13 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { ROLES } from '../constants/roles'
-import { canAccess, getRedirectFor, isUnknownRoute } from './guards'
+import {
+  ACCESS_DENIED_ROUTE,
+  canAccess,
+  getDeniedRedirectFor,
+  getRedirectFor,
+  isUnknownRoute,
+} from './guards'
 
 const { GUEST, CUSTOMER, ADMIN, COOK, DELIVERY } = ROLES
 
@@ -72,6 +78,12 @@ const routes = [
     component: () => import('../views/RegisterView.vue'),
     meta: { roles: [GUEST] },
   },
+  {
+    path: '/acceso-denegado',
+    name: ACCESS_DENIED_ROUTE,
+    component: () => import('../views/AccessDeniedView.vue'),
+    meta: { roles: [CUSTOMER, ADMIN, COOK, DELIVERY] },
+  },
 ]
 
 const router = createRouter({
@@ -82,8 +94,12 @@ const router = createRouter({
 router.beforeEach((to) => {
   const authStore = useAuthStore()
 
-  if (isUnknownRoute(to) || !canAccess(to, authStore.role)) {
+  if (isUnknownRoute(to)) {
     return getRedirectFor(authStore.role)
+  }
+
+  if (!canAccess(to, authStore.role)) {
+    return getDeniedRedirectFor(to, authStore.role)
   }
 })
 
