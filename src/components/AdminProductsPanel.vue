@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
-import { getAdminProducts, updateProduct, createProduct } from '../services/products.service'
+import { useAdminProducts } from '../composables/useAdminProducts'
 import { PRODUCT_CATEGORIES, CATEGORY_LABELS } from '../constants/productCategories'
 import PaginationControl from './PaginationControl.vue'
 import LoadingSpinner from './LoadingSpinner.vue'
@@ -18,26 +18,20 @@ function categoryLabel(category) {
 
 const LOW_STOCK_THRESHOLD = 5
 const TABLE_PAGE_SIZE = 7
-const DEFAULT_DISCOUNT = 0
 const HTTP_CONFLICT = 409
 
-const products = ref([])
-const isLoading = ref(false)
-const loadError = ref('')
-const actionError = ref('')
+const {
+  products,
+  isLoading,
+  loadError,
+  loadProducts,
+  addProduct,
+  editProduct,
+  toggleAvailability,
+  removeProduct,
+} = useAdminProducts()
 
-async function loadProducts() {
-  isLoading.value = true
-  loadError.value = ''
-  try {
-    products.value = await getAdminProducts()
-  } catch (err) {
-    loadError.value = 'No se han podido cargar los productos. Inténtalo de nuevo más tarde.'
-    console.error('[AdminProductsPanel] Error al obtener los productos:', err)
-  } finally {
-    isLoading.value = false
-  }
-}
+const actionError = ref('')
 
 onMounted(loadProducts)
 
@@ -83,8 +77,7 @@ watch(totalPages, (newTotal) => {
 async function toggleActive(product) {
   actionError.value = ''
   try {
-    const updatedProduct = await updateProduct(product.id, { available: !product.available })
-    product.available = updatedProduct.available
+    await toggleAvailability(product)
   } catch (err) {
     actionError.value = 'No se ha podido cambiar el estado del producto. Inténtalo de nuevo.'
     console.error('[AdminProductsPanel] Error al cambiar el estado:', err)
@@ -107,7 +100,7 @@ function cancelDelete() {
 }
 
 function confirmDelete() {
-  products.value = products.value.filter((p) => p.id !== productToDelete.value.id)
+  removeProduct(productToDelete.value.id)
   productToDelete.value = null
 }
 
@@ -136,13 +129,7 @@ function closeForm() {
 
 async function saveNewProduct(formData) {
   try {
-    const createdProduct = await createProduct({
-      ...formData,
-      discount: DEFAULT_DISCOUNT,
-      available: true,
-      exclusive: false,
-    })
-    products.value.push(createdProduct)
+    await addProduct(formData)
     closeForm()
   } catch (err) {
     formError.value =
@@ -155,8 +142,7 @@ async function saveNewProduct(formData) {
 
 async function saveProductChanges(formData) {
   try {
-    const updatedProduct = await updateProduct(productBeingEdited.value.id, formData)
-    Object.assign(productBeingEdited.value, updatedProduct)
+    await editProduct(productBeingEdited.value, formData)
     closeForm()
   } catch (err) {
     formError.value = 'No se han podido guardar los cambios. Inténtalo de nuevo.'
