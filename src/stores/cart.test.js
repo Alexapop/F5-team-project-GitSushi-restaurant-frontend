@@ -83,13 +83,20 @@ describe("useCartStore", () => {
     const cartStore = useCartStore();
     const offersStore = useExclusiveOffersStore();
     offersStore.offers = [
-      { productId: productA.id, discountPercentage: 15, expiresAt: null },
+      { productId: productA.id, finalPrice: 8.5, discountRate: 15, expiresAt: null },
     ];
 
     cartStore.addProduct(productA);
     cartStore.incrementQuantity(productA.id);
 
-    // 10 € * 15% = 1,5 € de descuento por unidad, 2 unidades = 3 €
+    // 10 € - 8,5 € = 1,5 € de descuento por unidad, 2 unidades = 3 €
+    expect(cartStore.discountAmount).toBeCloseTo(3);
+  });
+
+    cartStore.addProduct(productA);
+    cartStore.incrementQuantity(productA.id);
+
+    // 10 € - 8,5 € = 1,5 € de descuento por unidad, 2 unidades = 3 €
     expect(cartStore.discountAmount).toBeCloseTo(3);
   });
 
