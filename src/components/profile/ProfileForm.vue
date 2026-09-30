@@ -71,14 +71,30 @@ const errors = computed(() => {
 
   return result
 })
+function validateForm() {
+  Object.keys(form).forEach((field) => {
+    touched[field] = true
+  })
+
+  return Object.keys(errors.value).length === 0
+}
+
+function handleSubmit() {
+  if (!validateForm()) return
+
+  // El guardado se conectará cuando esté disponible el endpoint.
+}
 </script>
 
 <template>
   <section class="profile-form">
     <h2 class="profile-form__title">Datos personales</h2>
 
-    <form class="profile-form__fields" novalidate @submit.prevent>
-      <div class="profile-form__row">
+<form
+  class="profile-form__fields"
+  novalidate
+  @submit.prevent="handleSubmit"
+>      <div class="profile-form__row">
         <div>
           <label for="firstName">Nombre</label>
           <input

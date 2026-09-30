@@ -141,4 +141,17 @@ describe('ProfileForm', () => {
       'El guardado de cambios estará disponible próximamente.'
     )
   })
+  it('valida todos los campos al enviar el formulario', async () => {
+  const { wrapper } = mountForm()
+
+  for (const field of fields) {
+    await wrapper.get(`#${field}`).setValue('')
+  }
+
+  expect(wrapper.findAll('.profile-form__error')).toHaveLength(0)
+
+  await wrapper.get('form').trigger('submit')
+
+  expect(wrapper.findAll('.profile-form__error')).toHaveLength(6)
+})
 })
