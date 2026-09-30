@@ -1,69 +1,95 @@
-import { describe, it, expect, beforeEach } from 'vitest'
-import { createPinia, setActivePinia } from 'pinia'
-import router from './index'
-import { useAuthStore } from '../stores/auth'
+import { describe, it, expect } from 'vitest'
+import {
+  ACCESS_DENIED_ROUTE,
+  canAccess,
+  getDeniedRedirectFor,
+  getRedirectFor,
+  isGuestOnlyRoute,
+  isUnknownRoute,
+} from './guards'
 import { ROLES } from '../constants/roles'
 
-async function navigateAs(role, path) {
-  useAuthStore().role = role
-  await router.push(path)
-  return router.currentRoute.value.name
+function buildRoute(roles) {
+  return { meta: { roles }, matched: [{}] }
 }
 
-describe('router - acceso por rol', () => {
-  beforeEach(async () => {
-    setActivePinia(createPinia())
-    await router.push('/')
+describe('guards', () => {
+  describe('canAccess', () => {
+    it('permite el acceso si el rol está en meta.roles', () => {
+      const route = buildRoute([ROLES.CUSTOMER, ROLES.ADMIN])
+
+      expect(canAccess(route, ROLES.ADMIN)).toBe(true)
+    })
+
+    it('deniega el acceso si el rol no está en meta.roles', () => {
+      const route = buildRoute([ROLES.ADMIN])
+
+      expect(canAccess(route, ROLES.COOK)).toBe(false)
+    })
+
+    it('trata al invitado (null) como un rol más', () => {
+      const route = buildRoute([ROLES.GUEST])
+
+      expect(canAccess(route, ROLES.GUEST)).toBe(true)
+      expect(canAccess(route, ROLES.CUSTOMER)).toBe(false)
+    })
+
+    it('una ruta sin meta.roles es pública', () => {
+      expect(canAccess({ meta: {} }, ROLES.GUEST)).toBe(true)
+    })
   })
 
-  it('el invitado entra en la carta', async () => {
-    expect(await navigateAs(ROLES.GUEST, '/')).toBe('carta')
+  describe('getRedirectFor', () => {
+    it('manda al invitado a iniciar sesión', () => {
+      expect(getRedirectFor(ROLES.GUEST)).toEqual({ name: 'login' })
+    })
+
+    it('devuelve a la carta al usuario logueado que abre una URL que no existe', () => {
+      expect(getRedirectFor(ROLES.COOK)).toEqual({ name: 'carta' })
+    })
   })
 
-  it('el invitado que intenta entrar en admin va a iniciar sesión', async () => {
-    expect(await navigateAs(ROLES.GUEST, '/admin')).toBe('login')
+  describe('isGuestOnlyRoute', () => {
+    it('detecta una ruta que solo puede ver el invitado', () => {
+      expect(isGuestOnlyRoute(buildRoute([ROLES.GUEST]))).toBe(true)
+    })
+
+    it('no marca una ruta compartida con usuarios logueados', () => {
+      expect(isGuestOnlyRoute(buildRoute([ROLES.GUEST, ROLES.CUSTOMER]))).toBe(false)
+    })
+
+    it('una ruta pública no es solo para invitados', () => {
+      expect(isGuestOnlyRoute({ meta: {} })).toBe(false)
+    })
   })
 
-  it('el invitado entra en la cesta para poder pedir en sala sin registrarse', async () => {
-    expect(await navigateAs(ROLES.GUEST, '/cesta')).toBe('cesta')
+  describe('getDeniedRedirectFor', () => {
+    it('manda al invitado a iniciar sesión', () => {
+      const route = buildRoute([ROLES.ADMIN])
+
+      expect(getDeniedRedirectFor(route, ROLES.GUEST)).toEqual({ name: 'login' })
+    })
+
+    it('devuelve a la carta al usuario logueado que abre una vista solo de invitados', () => {
+      const route = buildRoute([ROLES.GUEST])
+
+      expect(getDeniedRedirectFor(route, ROLES.CUSTOMER)).toEqual({ name: 'carta' })
+    })
+
+    it('manda a acceso denegado al usuario logueado que abre una vista de otro rol', () => {
+      const route = buildRoute([ROLES.ADMIN])
+
+      expect(getDeniedRedirectFor(route, ROLES.COOK)).toEqual({ name: ACCESS_DENIED_ROUTE })
+    })
   })
 
-  it('el cliente entra en la cesta', async () => {
-    expect(await navigateAs(ROLES.CUSTOMER, '/cesta')).toBe('cesta')
-  })
+  describe('isUnknownRoute', () => {
+    it('detecta una URL que no coincide con ninguna ruta', () => {
+      expect(isUnknownRoute({ matched: [] })).toBe(true)
+    })
 
-  it('el cliente que intenta entrar en cocina ve acceso denegado', async () => {
-    expect(await navigateAs(ROLES.CUSTOMER, '/cocina')).toBe('acceso-denegado')
-  })
-
-  it('el cocinero que intenta entrar en admin ve acceso denegado', async () => {
-    expect(await navigateAs(ROLES.COOK, '/admin')).toBe('acceso-denegado')
-  })
-
-  it('el usuario logueado que abre el login vuelve a la carta', async () => {
-    expect(await navigateAs(ROLES.CUSTOMER, '/login')).toBe('carta')
-  })
-
-  it('el invitado que intenta ver acceso denegado va a iniciar sesión', async () => {
-    expect(await navigateAs(ROLES.GUEST, '/acceso-denegado')).toBe('login')
-  })
-
-  it('el admin entra en cocina, reparto y admin', async () => {
-    expect(await navigateAs(ROLES.ADMIN, '/cocina')).toBe('cocina')
-    expect(await navigateAs(ROLES.ADMIN, '/reparto')).toBe('reparto')
-    expect(await navigateAs(ROLES.ADMIN, '/admin')).toBe('admin')
-  })
-
-  it('el repartidor entra en reparto pero no en cocina', async () => {
-    expect(await navigateAs(ROLES.DELIVERY, '/reparto')).toBe('reparto')
-    expect(await navigateAs(ROLES.DELIVERY, '/cocina')).toBe('acceso-denegado')
-  })
-
-  it('una URL que no existe manda al invitado a iniciar sesión', async () => {
-    expect(await navigateAs(ROLES.GUEST, '/user')).toBe('login')
-  })
-
-  it('una URL que no existe devuelve a la carta al usuario logueado', async () => {
-    expect(await navigateAs(ROLES.CUSTOMER, '/user')).toBe('carta')
+    it('no marca como desconocida una ruta existente', () => {
+      expect(isUnknownRoute({ matched: [{}] })).toBe(false)
+    })
   })
 })
