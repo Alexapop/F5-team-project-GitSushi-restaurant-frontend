@@ -1,10 +1,11 @@
 <script setup>
-import { ref, computed, reactive, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { getAdminProducts, updateProduct, createProduct } from '../services/products.service'
 import { PRODUCT_CATEGORIES, CATEGORY_LABELS } from '../constants/productCategories'
 import PaginationControl from './PaginationControl.vue'
 import LoadingSpinner from './LoadingSpinner.vue'
-import { validateProductForm } from '../utils/productValidation'
+import ProductFormModal from './ProductFormModal.vue'
+import { PRODUCT_FORM_MODES } from '../constants/productFormModes'
 
 const ALL_CATEGORIES = 'ALL'
 const categoryOptions = Object.values(PRODUCT_CATEGORIES)
@@ -110,163 +111,68 @@ function confirmDelete() {
   productToDelete.value = null
 }
 
-// --- Añadir producto ---
-const showAddForm = ref(false)
-const addFormError = ref('')
-const isSavingProduct = ref(false)
-const newProduct = reactive({
-  name: '',
-  category: PRODUCT_CATEGORIES.ESPECIALES,
-  imageUrl: '',
-  price: '',
-  stock: '',
-  description: '',
-})
+// --- Formulario de producto (añadir y editar) ---
+const formMode = ref(null)
+const productBeingEdited = ref(null)
+const isSavingForm = ref(false)
+const formError = ref('')
 
-function openAddForm() {
-  newProduct.name = ''
-  newProduct.category = PRODUCT_CATEGORIES.ESPECIALES
-  newProduct.imageUrl = ''
-  newProduct.price = ''
-  newProduct.stock = ''
-  newProduct.description = ''
-  addFormError.value = ''
-  showAddForm.value = true
+function openCreateForm() {
+  productBeingEdited.value = null
+  formError.value = ''
+  formMode.value = PRODUCT_FORM_MODES.CREATE
 }
 
-function closeAddForm() {
-  showAddForm.value = false
+function openEditForm(product) {
+  productBeingEdited.value = product
+  formError.value = ''
+  formMode.value = PRODUCT_FORM_MODES.EDIT
 }
 
-async function submitAddForm() {
-  const priceNumber = parseFloat(newProduct.price)
-  const stockNumber = parseInt(newProduct.stock, 10)
+function closeForm() {
+  formMode.value = null
+  productBeingEdited.value = null
+}
 
-  const validationError = validateProductForm(newProduct, { requireImage: true })
-  if (validationError) {
-    addFormError.value = validationError
-    return
-  }
-
-  addFormError.value = ''
-  isSavingProduct.value = true
+async function saveNewProduct(formData) {
   try {
     const createdProduct = await createProduct({
-      name: newProduct.name.trim(),
-      category: newProduct.category,
-      description: newProduct.description.trim(),
-      imageUrl: newProduct.imageUrl.trim(),
-      price: priceNumber,
+      ...formData,
       discount: DEFAULT_DISCOUNT,
       available: true,
       exclusive: false,
-      stock: stockNumber,
     })
     products.value.push(createdProduct)
-    showAddForm.value = false
+    closeForm()
   } catch (err) {
-    addFormError.value =
+    formError.value =
       err.response?.status === HTTP_CONFLICT
         ? 'Ya existe un producto con ese nombre.'
         : 'No se ha podido guardar el producto. Inténtalo de nuevo.'
     console.error('[AdminProductsPanel] Error al crear el producto:', err)
-  } finally {
-    isSavingProduct.value = false
   }
 }
 
-// --- Editar producto (nombre, categoría, precio, stock, descripción) ---
-const editingProduct = ref(null)
-const editProductForm = reactive({
-  name: '',
-  category: PRODUCT_CATEGORIES.ESPECIALES,
-  price: '',
-  stock: '',
-  description: '',
-})
-const editProductOriginal = reactive({
-  name: '',
-  category: '',
-  price: '',
-  stock: '',
-  description: '',
-})
-const editProductError = ref('')
-const isSavingEdit = ref(false)
-
-function openEditProduct(product) {
-  editingProduct.value = product
-
-  editProductForm.name = product.name
-  editProductForm.category = product.category
-  editProductForm.price = product.price
-  editProductForm.stock = product.stock ?? 0
-  editProductForm.description = product.description
-
-  // Copia aparte de los valores originales, para poder comparar y saber si algo cambió
-  editProductOriginal.name = product.name
-  editProductOriginal.category = product.category
-  editProductOriginal.price = product.price
-  editProductOriginal.stock = product.stock ?? 0
-  editProductOriginal.description = product.description
-
-  editProductError.value = ''
-}
-
-function closeEditProduct() {
-  editingProduct.value = null
-}
-
-const hasEditChanges = computed(() => {
-  if (!editingProduct.value) return false
-  return (
-    editProductForm.name !== editProductOriginal.name ||
-    editProductForm.category !== editProductOriginal.category ||
-    String(editProductForm.price) !== String(editProductOriginal.price) ||
-    String(editProductForm.stock) !== String(editProductOriginal.stock) ||
-    editProductForm.description !== editProductOriginal.description
-  )
-})
-
-function incrementEditStock() {
-  const current = parseInt(editProductForm.stock, 10)
-  editProductForm.stock = (isNaN(current) ? 0 : current) + 1
-}
-
-function decrementEditStock() {
-  const current = parseInt(editProductForm.stock, 10)
-  const next = (isNaN(current) ? 0 : current) - 1
-  editProductForm.stock = next < 0 ? 0 : next
-}
-
-async function submitEditProduct() {
-  const priceNumber = parseFloat(editProductForm.price)
-  const stockNumber = parseInt(editProductForm.stock, 10)
-
-  const validationError = validateProductForm(editProductForm)
-  if (validationError) {
-    editProductError.value = validationError
-    return
-  }
-
-  editProductError.value = ''
-  isSavingEdit.value = true
+async function saveProductChanges(formData) {
   try {
-    const updatedProduct = await updateProduct(editingProduct.value.id, {
-      name: editProductForm.name.trim(),
-      category: editProductForm.category,
-      price: priceNumber,
-      description: editProductForm.description.trim(),
-      stock: stockNumber,
-    })
-    Object.assign(editingProduct.value, updatedProduct)
-    editingProduct.value = null
+    const updatedProduct = await updateProduct(productBeingEdited.value.id, formData)
+    Object.assign(productBeingEdited.value, updatedProduct)
+    closeForm()
   } catch (err) {
-    editProductError.value = 'No se han podido guardar los cambios. Inténtalo de nuevo.'
+    formError.value = 'No se han podido guardar los cambios. Inténtalo de nuevo.'
     console.error('[AdminProductsPanel] Error al editar el producto:', err)
-  } finally {
-    isSavingEdit.value = false
   }
+}
+
+async function handleFormSubmit(formData) {
+  formError.value = ''
+  isSavingForm.value = true
+  if (formMode.value === PRODUCT_FORM_MODES.CREATE) {
+    await saveNewProduct(formData)
+  } else {
+    await saveProductChanges(formData)
+  }
+  isSavingForm.value = false
 }
 </script>
 
@@ -279,7 +185,7 @@ async function submitEditProduct() {
       </div>
       <button
         type="button"
-        @click="openAddForm"
+        @click="openCreateForm"
         class="bg-primary text-on-primary px-4 py-2 rounded-lg font-semibold text-sm hover:opacity-90 transition self-start sm:self-auto whitespace-nowrap"
       >
         + Añadir nuevo producto a la carta
@@ -371,7 +277,7 @@ async function submitEditProduct() {
                 </button>
                 <button
                   type="button"
-                  @click="openEditProduct(product)"
+                  @click="openEditForm(product)"
                   class="w-8 h-8 flex items-center justify-center rounded-lg border border-outline text-on-surface-variant hover:text-primary hover:border-primary/50 transition"
                   aria-label="Editar producto"
                   title="Editar"
@@ -431,201 +337,15 @@ async function submitEditProduct() {
       </div>
     </div>
 
-    <!-- Modal para añadir nuevo producto -->
-    <div
-      v-if="showAddForm"
-      class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4"
-    >
-      <div class="bg-white rounded-xl p-6 max-w-md w-full shadow-lg">
-        <h3 class="text-lg font-heading font-bold text-on-surface mb-4">Añadir nuevo producto a la carta</h3>
-
-        <form @submit.prevent="submitAddForm" class="flex flex-col gap-3">
-          <div>
-            <label class="block text-xs font-semibold text-on-surface-variant mb-1">Nombre</label>
-            <input
-              v-model="newProduct.name"
-              type="text"
-              class="w-full px-3 py-2 rounded-lg border border-outline text-sm outline-none focus:border-primary"
-              placeholder="Ej. Merge Nigiri"
-            />
-          </div>
-
-          <div>
-            <label class="block text-xs font-semibold text-on-surface-variant mb-1">Imagen (nombre del archivo)</label>
-            <input
-              v-model="newProduct.imageUrl"
-              type="text"
-              class="w-full px-3 py-2 rounded-lg border border-outline text-sm outline-none focus:border-primary"
-              placeholder="Ej. merge-nigiri.png"
-            />
-          </div>
-
-          <div>
-            <label class="block text-xs font-semibold text-on-surface-variant mb-1">Categoría</label>
-            <select
-              v-model="newProduct.category"
-              class="w-full px-3 py-2 rounded-lg border border-outline text-sm outline-none focus:border-primary"
-            >
-              <option v-for="cat in categoryOptions" :key="cat" :value="cat">{{ categoryLabel(cat) }}</option>
-            </select>
-          </div>
-
-          <div class="flex gap-3">
-            <div class="flex-1">
-              <label class="block text-xs font-semibold text-on-surface-variant mb-1">Precio (€)</label>
-              <input
-                v-model="newProduct.price"
-                type="number"
-                step="0.01"
-                min="0"
-                class="w-full px-3 py-2 rounded-lg border border-outline text-sm outline-none focus:border-primary"
-                placeholder="Ej. 12.50"
-              />
-            </div>
-            <div class="flex-1">
-              <label class="block text-xs font-semibold text-on-surface-variant mb-1">Stock inicial</label>
-              <input
-                v-model="newProduct.stock"
-                type="number"
-                step="1"
-                min="0"
-                class="w-full px-3 py-2 rounded-lg border border-outline text-sm outline-none focus:border-primary"
-                placeholder="Ej. 20"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-xs font-semibold text-on-surface-variant mb-1">Descripción</label>
-            <textarea
-              v-model="newProduct.description"
-              rows="3"
-              class="w-full px-3 py-2 rounded-lg border border-outline text-sm outline-none focus:border-primary resize-none"
-              placeholder="Breve descripción del producto"
-            ></textarea>
-          </div>
-
-          <p v-if="addFormError" class="text-error text-sm">{{ addFormError }}</p>
-
-          <div class="flex justify-end gap-3 pt-2">
-            <button
-              type="button"
-              @click="closeAddForm"
-              class="px-4 py-2 rounded-lg border border-outline text-on-surface text-sm font-semibold hover:bg-surface-container-high transition"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              :disabled="isSavingProduct"
-              class="px-4 py-2 rounded-lg bg-primary text-on-primary text-sm font-semibold hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {{ isSavingProduct ? 'Guardando...' : 'Guardar' }}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- Modal para editar producto -->
-    <div
-      v-if="editingProduct"
-      class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4"
-    >
-      <div class="bg-white rounded-xl p-6 max-w-md w-full shadow-lg">
-        <h3 class="text-lg font-heading font-bold text-on-surface mb-4">Editar producto</h3>
-
-        <form @submit.prevent="submitEditProduct" class="flex flex-col gap-3">
-          <div>
-            <label class="block text-xs font-semibold text-on-surface-variant mb-1">Nombre</label>
-            <input
-              v-model="editProductForm.name"
-              type="text"
-              class="w-full px-3 py-2 rounded-lg border border-outline text-sm outline-none focus:border-primary"
-            />
-          </div>
-
-          <div>
-            <label class="block text-xs font-semibold text-on-surface-variant mb-1">Categoría</label>
-            <select
-              v-model="editProductForm.category"
-              class="w-full px-3 py-2 rounded-lg border border-outline text-sm outline-none focus:border-primary"
-            >
-              <option v-for="cat in categoryOptions" :key="cat" :value="cat">{{ categoryLabel(cat) }}</option>
-            </select>
-          </div>
-
-          <div class="flex gap-3">
-            <div class="flex-1">
-              <label class="block text-xs font-semibold text-on-surface-variant mb-1">Precio (€)</label>
-              <input
-                v-model="editProductForm.price"
-                type="number"
-                step="0.01"
-                min="0"
-                class="w-full px-3 py-2 rounded-lg border border-outline text-sm outline-none focus:border-primary"
-              />
-            </div>
-            <div class="flex-1">
-              <label class="block text-xs font-semibold text-on-surface-variant mb-1">Stock</label>
-              <div class="flex items-center border border-outline rounded-lg overflow-hidden">
-                <button
-                  type="button"
-                  @click="decrementEditStock"
-                  class="w-8 h-8 flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition"
-                  aria-label="Disminuir stock"
-                >
-                  −
-                </button>
-                <input
-                  v-model="editProductForm.stock"
-                  type="number"
-                  min="0"
-                  step="1"
-                  class="flex-1 w-0 text-center border-x border-outline text-sm outline-none py-2"
-                />
-                <button
-                  type="button"
-                  @click="incrementEditStock"
-                  class="w-8 h-8 flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition"
-                  aria-label="Aumentar stock"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-xs font-semibold text-on-surface-variant mb-1">Descripción</label>
-            <textarea
-              v-model="editProductForm.description"
-              rows="3"
-              class="w-full px-3 py-2 rounded-lg border border-outline text-sm outline-none focus:border-primary resize-none"
-            ></textarea>
-          </div>
-
-          <p v-if="editProductError" class="text-error text-sm">{{ editProductError }}</p>
-
-          <div class="flex justify-end gap-3 pt-2">
-            <button
-              type="button"
-              @click="closeEditProduct"
-              class="px-4 py-2 rounded-lg border border-outline text-on-surface text-sm font-semibold hover:bg-surface-container-high transition"
-            >
-              Cancelar
-            </button>
-            <button
-              v-if="hasEditChanges"
-              type="submit"
-              :disabled="isSavingEdit"
-              class="px-4 py-2 rounded-lg bg-secondary text-white text-sm font-semibold hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {{ isSavingEdit ? 'Guardando...' : 'Guardar cambios' }}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <!-- Formulario de producto (añadir y editar) -->
+    <ProductFormModal
+      v-if="formMode"
+      :mode="formMode"
+      :initial-product="productBeingEdited"
+      :is-saving="isSavingForm"
+      :error-message="formError"
+      @submit="handleFormSubmit"
+      @cancel="closeForm"
+    />
   </section>
 </template>
