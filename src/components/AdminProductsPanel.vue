@@ -11,6 +11,10 @@ import ConfirmDialog from './ConfirmDialog.vue'
 import CategoryFilters from './CategoryFilters.vue'
 import { PRODUCT_FORM_MODES } from '../constants/productFormModes'
 
+// Sección de gestión de productos del panel de administración.
+// Coordina las piezas: pide los datos al composable, filtra, pagina y decide
+// qué modal mostrar. Cada parte visual vive en su propio componente.
+
 const ALL_CATEGORIES = 'ALL'
 const categoryOptions = Object.values(PRODUCT_CATEGORIES)
 const categories = [ALL_CATEGORIES, ...categoryOptions]
@@ -158,20 +162,16 @@ async function handleFormSubmit(formData) {
 </script>
 
 <template>
-  <section class="bg-white border border-outline rounded-xl p-5">
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+  <section class="admin-products">
+    <header class="admin-products__header">
       <div>
-        <h2 class="text-xl font-heading font-bold text-on-surface">Gestión de Productos de la Carta</h2>
-        <p class="text-on-surface-variant text-sm">Consulta el estado de los productos por categoría.</p>
+        <h2 class="admin-products__title">Gestión de Productos de la Carta</h2>
+        <p class="admin-products__subtitle">Consulta el estado de los productos por categoría.</p>
       </div>
-      <button
-        type="button"
-        @click="openCreateForm"
-        class="bg-primary text-on-primary px-4 py-2 rounded-lg font-semibold text-sm hover:opacity-90 transition self-start sm:self-auto whitespace-nowrap"
-      >
+      <button type="button" class="admin-products__add-button" @click="openCreateForm">
         + Añadir nuevo producto a la carta
       </button>
-    </div>
+    </header>
 
     <!-- Filtros por categoría -->
     <CategoryFilters
@@ -180,12 +180,12 @@ async function handleFormSubmit(formData) {
       @select-category="selectCategory"
     />
 
-    <p v-if="actionError" class="mb-3 text-error text-sm">{{ actionError }}</p>
+    <p v-if="actionError" class="admin-products__action-error">{{ actionError }}</p>
 
     <!-- Tabla de productos -->
     <LoadingSpinner v-if="isLoading" label="Cargando productos..." />
-    <p v-else-if="loadError" class="py-6 text-center text-error">{{ loadError }}</p>
-    <div v-else class="overflow-x-auto">
+    <p v-else-if="loadError" class="admin-products__load-error">{{ loadError }}</p>
+    <div v-else class="admin-products__table-wrapper">
       <AdminProductsTable
         :products="paginatedProducts"
         @toggle-availability="handleToggleAvailability"
@@ -225,3 +225,39 @@ async function handleFormSubmit(formData) {
     />
   </section>
 </template>
+
+<style scoped>
+@reference "../style.css";
+
+.admin-products {
+  @apply bg-white border border-outline rounded-xl p-5;
+}
+
+.admin-products__header {
+  @apply flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4;
+}
+
+.admin-products__title {
+  @apply text-xl font-heading font-bold text-on-surface;
+}
+
+.admin-products__subtitle {
+  @apply text-on-surface-variant text-sm;
+}
+
+.admin-products__add-button {
+  @apply bg-primary text-on-primary px-4 py-2 rounded-lg font-semibold text-sm hover:opacity-90 transition self-start sm:self-auto whitespace-nowrap;
+}
+
+.admin-products__action-error {
+  @apply mb-3 text-error text-sm;
+}
+
+.admin-products__load-error {
+  @apply py-6 text-center text-error;
+}
+
+.admin-products__table-wrapper {
+  @apply overflow-x-auto;
+}
+</style>

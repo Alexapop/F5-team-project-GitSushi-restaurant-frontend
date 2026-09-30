@@ -4,6 +4,10 @@ import { PRODUCT_CATEGORIES, CATEGORY_LABELS } from '../constants/productCategor
 import { PRODUCT_FORM_MODES } from '../constants/productFormModes'
 import { validateProductForm } from '../utils/productValidation'
 
+// Formulario de producto para añadir o editar, según el modo que recibe.
+// Valida los datos y, si son correctos, emite submit con los datos limpios.
+// No llama al backend: eso lo decide el padre.
+
 const MIN_STOCK = 0
 const STOCK_STEP = 1
 
@@ -94,77 +98,79 @@ function handleSubmit() {
 </script>
 
 <template>
-  <div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
-    <div class="bg-white rounded-xl p-6 max-w-md w-full shadow-lg">
-      <h3 class="text-lg font-heading font-bold text-on-surface mb-4">{{ texts.title }}</h3>
+  <div class="product-form" role="dialog" aria-modal="true" :aria-label="texts.title">
+    <div class="product-form__box">
+      <h3 class="product-form__title">{{ texts.title }}</h3>
 
-      <form @submit.prevent="handleSubmit" class="flex flex-col gap-3">
+      <form class="product-form__form" @submit.prevent="handleSubmit">
         <div>
-          <label class="block text-xs font-semibold text-on-surface-variant mb-1">Nombre</label>
+          <label class="product-form__label" for="product-name">Nombre</label>
           <input
+            id="product-name"
             v-model="form.name"
             type="text"
-            class="w-full px-3 py-2 rounded-lg border border-outline text-sm outline-none focus:border-primary"
+            class="product-form__input"
             placeholder="Ej. Merge Nigiri"
           />
         </div>
 
         <div v-if="isCreateMode">
-          <label class="block text-xs font-semibold text-on-surface-variant mb-1">Imagen (nombre del archivo)</label>
+          <label class="product-form__label" for="product-image">Imagen (nombre del archivo)</label>
           <input
+            id="product-image"
             v-model="form.imageUrl"
             type="text"
-            class="w-full px-3 py-2 rounded-lg border border-outline text-sm outline-none focus:border-primary"
+            class="product-form__input"
             placeholder="Ej. merge-nigiri.png"
           />
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-on-surface-variant mb-1">Categoría</label>
-          <select
-            v-model="form.category"
-            class="w-full px-3 py-2 rounded-lg border border-outline text-sm outline-none focus:border-primary"
-          >
+          <label class="product-form__label" for="product-category">Categoría</label>
+          <select id="product-category" v-model="form.category" class="product-form__input">
             <option v-for="cat in categoryOptions" :key="cat" :value="cat">{{ CATEGORY_LABELS[cat] }}</option>
           </select>
         </div>
 
-        <div class="flex gap-3">
-          <div class="flex-1">
-            <label class="block text-xs font-semibold text-on-surface-variant mb-1">Precio (€)</label>
+        <div class="product-form__row">
+          <div class="product-form__row-item">
+            <label class="product-form__label" for="product-price">Precio (€)</label>
             <input
+              id="product-price"
               v-model="form.price"
               type="number"
               step="0.01"
               min="0"
-              class="w-full px-3 py-2 rounded-lg border border-outline text-sm outline-none focus:border-primary"
+              class="product-form__input"
               placeholder="Ej. 12.50"
             />
           </div>
-          <div class="flex-1">
-            <label class="block text-xs font-semibold text-on-surface-variant mb-1">{{ texts.stockLabel }}</label>
-            <div class="flex items-center border border-outline rounded-lg overflow-hidden">
+
+          <div class="product-form__row-item">
+            <label class="product-form__label" for="product-stock">{{ texts.stockLabel }}</label>
+            <div class="product-form__stepper">
               <button
                 type="button"
-                @click="decrementStock"
-                class="w-8 h-8 flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition"
+                class="product-form__stepper-button"
                 aria-label="Disminuir stock"
+                @click="decrementStock"
               >
                 −
               </button>
               <input
+                id="product-stock"
                 v-model="form.stock"
                 type="number"
                 min="0"
                 step="1"
-                class="flex-1 w-0 text-center border-x border-outline text-sm outline-none py-2"
+                class="product-form__stepper-input"
                 placeholder="Ej. 20"
               />
               <button
                 type="button"
-                @click="incrementStock"
-                class="w-8 h-8 flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition"
+                class="product-form__stepper-button"
                 aria-label="Aumentar stock"
+                @click="incrementStock"
               >
                 +
               </button>
@@ -173,30 +179,27 @@ function handleSubmit() {
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-on-surface-variant mb-1">Descripción</label>
+          <label class="product-form__label" for="product-description">Descripción</label>
           <textarea
+            id="product-description"
             v-model="form.description"
             rows="3"
-            class="w-full px-3 py-2 rounded-lg border border-outline text-sm outline-none focus:border-primary resize-none"
+            class="product-form__input product-form__input--textarea"
             placeholder="Breve descripción del producto"
           ></textarea>
         </div>
 
-        <p v-if="displayedError" class="text-error text-sm">{{ displayedError }}</p>
+        <p v-if="displayedError" class="product-form__error">{{ displayedError }}</p>
 
-        <div class="flex justify-end gap-3 pt-2">
-          <button
-            type="button"
-            @click="emit('cancel')"
-            class="px-4 py-2 rounded-lg border border-outline text-on-surface text-sm font-semibold hover:bg-surface-container-high transition"
-          >
+        <div class="product-form__actions">
+          <button type="button" class="product-form__button" @click="emit('cancel')">
             Cancelar
           </button>
           <button
             v-if="canSubmit"
             type="submit"
             :disabled="isSaving"
-            class="px-4 py-2 rounded-lg bg-primary text-on-primary text-sm font-semibold hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            class="product-form__button product-form__button--primary"
           >
             {{ isSaving ? 'Guardando...' : texts.submitLabel }}
           </button>
@@ -205,3 +208,71 @@ function handleSubmit() {
     </div>
   </div>
 </template>
+
+<style scoped>
+@reference "../style.css";
+
+.product-form {
+  @apply fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4;
+}
+
+.product-form__box {
+  @apply bg-white rounded-xl p-6 max-w-md w-full shadow-lg;
+}
+
+.product-form__title {
+  @apply text-lg font-heading font-bold text-on-surface mb-4;
+}
+
+.product-form__form {
+  @apply flex flex-col gap-3;
+}
+
+.product-form__label {
+  @apply block text-xs font-semibold text-on-surface-variant mb-1;
+}
+
+.product-form__input {
+  @apply w-full px-3 py-2 rounded-lg border border-outline text-sm outline-none focus:border-primary;
+}
+
+.product-form__input--textarea {
+  @apply resize-none;
+}
+
+.product-form__row {
+  @apply flex gap-3;
+}
+
+.product-form__row-item {
+  @apply flex-1;
+}
+
+.product-form__stepper {
+  @apply flex items-center border border-outline rounded-lg overflow-hidden;
+}
+
+.product-form__stepper-button {
+  @apply w-8 h-8 flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition;
+}
+
+.product-form__stepper-input {
+  @apply flex-1 w-0 text-center border-x border-outline text-sm outline-none py-2;
+}
+
+.product-form__error {
+  @apply text-error text-sm;
+}
+
+.product-form__actions {
+  @apply flex justify-end gap-3 pt-2;
+}
+
+.product-form__button {
+  @apply px-4 py-2 rounded-lg border border-outline text-on-surface text-sm font-semibold hover:bg-surface-container-high transition;
+}
+
+.product-form__button--primary {
+  @apply bg-primary text-on-primary border-primary hover:bg-primary hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed;
+}
+</style>
