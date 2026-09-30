@@ -1,5 +1,6 @@
 <script setup>
 import { CATEGORY_LABELS } from '../constants/productCategories'
+import { formatCurrency } from '../utils/formatCurrency'
 
 // Tabla de productos del panel de administración.
 // Solo pinta la lista que recibe y avisa al padre de lo que pulsa el usuario:
@@ -15,9 +16,6 @@ const emit = defineEmits(['toggle-availability', 'edit', 'delete'])
 
 const LOW_STOCK_THRESHOLD = 5
 const EMPTY_VALUE = '—'
-
-const formatCurrency = (value) =>
-  value.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })
 
 function isLowStock(product) {
   return product.stock <= LOW_STOCK_THRESHOLD
