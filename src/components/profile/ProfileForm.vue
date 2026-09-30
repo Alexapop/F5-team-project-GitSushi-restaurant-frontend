@@ -5,6 +5,53 @@ import { useAuthStore } from '../../stores/auth'
 const authStore = useAuthStore()
 const formElement = ref(null)
 
+const fields = [
+  {
+    name: 'firstName',
+    label: 'Nombre',
+    type: 'text',
+    autocomplete: 'given-name',
+    requiredMessage: 'El nombre es obligatorio.',
+  },
+  {
+    name: 'lastName',
+    label: 'Apellidos',
+    type: 'text',
+    autocomplete: 'family-name',
+    requiredMessage: 'Los apellidos son obligatorios.',
+  },
+  {
+    name: 'email',
+    label: 'Correo electrónico',
+    type: 'email',
+    autocomplete: 'email',
+    requiredMessage: 'El correo electrónico es obligatorio.',
+    fullWidth: true,
+  },
+  {
+    name: 'address',
+    label: 'Dirección',
+    type: 'text',
+    autocomplete: 'street-address',
+    requiredMessage: 'La dirección es obligatoria.',
+    fullWidth: true,
+  },
+  {
+    name: 'postalCode',
+    label: 'Código postal',
+    type: 'text',
+    autocomplete: 'postal-code',
+    requiredMessage: 'El código postal es obligatorio.',
+  },
+  {
+    name: 'city',
+    label: 'Ciudad',
+    type: 'text',
+    autocomplete: 'address-level2',
+    requiredMessage: 'La ciudad es obligatoria.',
+  },
+]
+
 const form = reactive({
   firstName: '',
   lastName: '',
@@ -16,16 +63,12 @@ const form = reactive({
 
 const touched = reactive({})
 
-function validateField(field) {
-  touched[field] = true
-}
-
 function resetForm() {
   const user = authStore.user
 
-  Object.keys(form).forEach((field) => {
-    form[field] = user?.[field] ?? ''
-    touched[field] = false
+  fields.forEach(({ name }) => {
+    form[name] = user?.[name] ?? ''
+    touched[name] = false
   })
 }
 
@@ -40,26 +83,17 @@ const hasChanges = computed(() => {
 
   if (!user) return false
 
-  return Object.keys(form).some((field) => {
-    return form[field] !== (user[field] ?? '')
+  return fields.some(({ name }) => {
+    return form[name] !== (user[name] ?? '')
   })
 })
 
 const errors = computed(() => {
   const result = {}
 
-  const requiredFields = {
-    firstName: 'El nombre es obligatorio.',
-    lastName: 'Los apellidos son obligatorios.',
-    email: 'El correo electrónico es obligatorio.',
-    address: 'La dirección es obligatoria.',
-    postalCode: 'El código postal es obligatorio.',
-    city: 'La ciudad es obligatoria.',
-  }
-
-  Object.entries(requiredFields).forEach(([field, message]) => {
-    if (!form[field].trim()) {
-      result[field] = message
+  fields.forEach(({ name, requiredMessage }) => {
+    if (!form[name].trim()) {
+      result[name] = requiredMessage
     }
   })
 
@@ -72,15 +106,22 @@ const errors = computed(() => {
 
   return result
 })
+
+function validateField(field) {
+  touched[field] = true
+}
+
 function validateForm() {
-  Object.keys(form).forEach((field) => {
-    touched[field] = true
+  fields.forEach(({ name }) => {
+    touched[name] = true
   })
 
   return Object.keys(errors.value).length === 0
 }
 
 async function handleSubmit() {
+  if (authStore.isFetchingUser || !authStore.user) return
+
   if (!validateForm()) {
     await nextTick()
 
@@ -91,164 +132,81 @@ async function handleSubmit() {
     return
   }
 
-  // El guardado se conectará cuando esté disponible el endpoint.
+  if (!hasChanges.value) return
+
+  // Pendiente del contrato del backend:
+  // enviar los datos y actualizar el store tras guardar correctamente.
 }
 </script>
 
 <template>
-  <section class="profile-form">
+  <section
+    class="profile-form"
+    :aria-busy="Boolean(authStore.isFetchingUser)"
+  >
     <h2 class="profile-form__title">Datos personales</h2>
 
-<form
-  ref="formElement"
-  class="profile-form__fields"
-  novalidate
-  @submit.prevent="handleSubmit"
->   
-   <div class="profile-form__row">
-        <div>
-          <label for="firstName">Nombre</label>
-          <input
-            id="firstName"
-            v-model="form.firstName"
-            type="text"
-            autocomplete="given-name"
-            required
-            :aria-invalid="Boolean(touched.firstName && errors.firstName)"
-            :aria-describedby="
-              touched.firstName && errors.firstName
-                ? 'firstName-error'
-                : undefined
-            "
-            @blur="validateField('firstName')"
-          />
-          <p
-            v-if="touched.firstName && errors.firstName"
-            id="firstName-error"
-            class="profile-form__error"
-          >
-            {{ errors.firstName }}
-          </p>
-        </div>
+    <p
+      v-if="authStore.isFetchingUser"
+      class="profile-form__notice"
+      role="status"
+    >
+      Cargando tus datos…
+    </p>
 
-        <div>
-          <label for="lastName">Apellidos</label>
-          <input
-            id="lastName"
-            v-model="form.lastName"
-            type="text"
-            autocomplete="family-name"
-            required
-            :aria-invalid="Boolean(touched.lastName && errors.lastName)"
-            :aria-describedby="
-              touched.lastName && errors.lastName
-                ? 'lastName-error'
-                : undefined
-            "
-            @blur="validateField('lastName')"
-          />
-          <p
-            v-if="touched.lastName && errors.lastName"
-            id="lastName-error"
-            class="profile-form__error"
-          >
-            {{ errors.lastName }}
-          </p>
-        </div>
-      </div>
+    <p
+      v-else-if="!authStore.user"
+      class="profile-form__notice"
+      role="status"
+    >
+      No hay datos de usuario disponibles.
+    </p>
 
-      <div>
-        <label for="email">Correo electrónico</label>
-        <input
-          id="email"
-          v-model="form.email"
-          type="email"
-          autocomplete="email"
-          required
-          :aria-invalid="Boolean(touched.email && errors.email)"
-          :aria-describedby="
-            touched.email && errors.email ? 'email-error' : undefined
-          "
-          @blur="validateField('email')"
-        />
-        <p
-          v-if="touched.email && errors.email"
-          id="email-error"
-          class="profile-form__error"
+    <form
+      v-else
+      ref="formElement"
+      class="profile-form__fields"
+      novalidate
+      @submit.prevent="handleSubmit"
+    >
+      <p class="profile-form__notice">
+        Todos los campos son obligatorios.
+      </p>
+
+      <div class="profile-form__grid">
+        <div
+          v-for="field in fields"
+          :key="field.name"
+          :class="{
+            'profile-form__field--full': field.fullWidth,
+          }"
         >
-          {{ errors.email }}
-        </p>
-      </div>
+          <label :for="field.name">{{ field.label }}</label>
 
-      <div>
-        <label for="address">Dirección</label>
-        <input
-          id="address"
-          v-model="form.address"
-          type="text"
-          autocomplete="street-address"
-          required
-          :aria-invalid="Boolean(touched.address && errors.address)"
-          :aria-describedby="
-            touched.address && errors.address ? 'address-error' : undefined
-          "
-          @blur="validateField('address')"
-        />
-        <p
-          v-if="touched.address && errors.address"
-          id="address-error"
-          class="profile-form__error"
-        >
-          {{ errors.address }}
-        </p>
-      </div>
-
-      <div class="profile-form__row">
-        <div>
-          <label for="postalCode">Código postal</label>
           <input
-            id="postalCode"
-            v-model="form.postalCode"
-            type="text"
-            autocomplete="postal-code"
+            :id="field.name"
+            v-model="form[field.name]"
+            :name="field.name"
+            :type="field.type"
+            :autocomplete="field.autocomplete"
             required
-            :aria-invalid="Boolean(touched.postalCode && errors.postalCode)"
+            :aria-invalid="
+              Boolean(touched[field.name] && errors[field.name])
+            "
             :aria-describedby="
-              touched.postalCode && errors.postalCode
-                ? 'postalCode-error'
+              touched[field.name] && errors[field.name]
+                ? `${field.name}-error`
                 : undefined
             "
-            @blur="validateField('postalCode')"
+            @blur="validateField(field.name)"
           />
-          <p
-            v-if="touched.postalCode && errors.postalCode"
-            id="postalCode-error"
-            class="profile-form__error"
-          >
-            {{ errors.postalCode }}
-          </p>
-        </div>
 
-        <div>
-          <label for="city">Ciudad</label>
-          <input
-            id="city"
-            v-model="form.city"
-            type="text"
-            autocomplete="address-level2"
-            required
-            :aria-invalid="Boolean(touched.city && errors.city)"
-            :aria-describedby="
-              touched.city && errors.city ? 'city-error' : undefined
-            "
-            @blur="validateField('city')"
-          />
           <p
-            v-if="touched.city && errors.city"
-            id="city-error"
+            v-if="touched[field.name] && errors[field.name]"
+            :id="`${field.name}-error`"
             class="profile-form__error"
           >
-            {{ errors.city }}
+            {{ errors[field.name] }}
           </p>
         </div>
       </div>
@@ -303,8 +261,12 @@ async function handleSubmit() {
   @apply flex flex-col gap-5;
 }
 
-.profile-form__row {
+.profile-form__grid {
   @apply grid grid-cols-1 gap-5 sm:grid-cols-2;
+}
+
+.profile-form__field--full {
+  @apply sm:col-span-2;
 }
 
 .profile-form label {
