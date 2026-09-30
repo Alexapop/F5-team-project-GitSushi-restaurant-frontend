@@ -93,13 +93,6 @@ describe("useCartStore", () => {
     expect(cartStore.discountAmount).toBeCloseTo(3);
   });
 
-    cartStore.addProduct(productA);
-    cartStore.incrementQuantity(productA.id);
-
-    // 10 € - 8,5 € = 1,5 € de descuento por unidad, 2 unidades = 3 €
-    expect(cartStore.discountAmount).toBeCloseTo(3);
-  });
-
   it("decreases the quantity without removing the line when above 1", () => {
     const cartStore = useCartStore();
 
