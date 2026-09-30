@@ -7,6 +7,7 @@ import LoadingSpinner from './LoadingSpinner.vue'
 import ProductFormModal from './ProductFormModal.vue'
 import AdminProductsTable from './AdminProductsTable.vue'
 import ConfirmDialog from './ConfirmDialog.vue'
+import CategoryFilters from './CategoryFilters.vue'
 import { PRODUCT_FORM_MODES } from '../constants/productFormModes'
 
 const ALL_CATEGORIES = 'ALL'
@@ -43,6 +44,14 @@ const categoryCounts = computed(() => {
   }
   return counts
 })
+
+const categoryFilterOptions = computed(() =>
+  categories.map((category) => ({
+    value: category,
+    label: categoryLabel(category),
+    count: categoryCounts.value[category],
+  }))
+)
 
 const filteredProducts = computed(() => {
   if (activeCategory.value === ALL_CATEGORIES) return products.value
@@ -176,22 +185,11 @@ async function handleFormSubmit(formData) {
     </div>
 
     <!-- Filtros por categoría -->
-    <div class="flex flex-wrap gap-2 mb-4">
-      <button
-        v-for="cat in categories"
-        :key="cat"
-        type="button"
-        @click="selectCategory(cat)"
-        :class="[
-          'px-3 py-1.5 rounded-full text-sm font-semibold border transition',
-          activeCategory === cat
-            ? 'bg-primary text-on-primary border-primary'
-            : 'bg-surface-variant text-on-surface-variant border-outline hover:border-primary/50',
-        ]"
-      >
-        {{ categoryLabel(cat) }} ({{ categoryCounts[cat] }})
-      </button>
-    </div>
+    <CategoryFilters
+      :options="categoryFilterOptions"
+      :active-category="activeCategory"
+      @select-category="selectCategory"
+    />
 
     <p v-if="actionError" class="mb-3 text-error text-sm">{{ actionError }}</p>
 
