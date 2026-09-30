@@ -1,6 +1,7 @@
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useAdminProducts } from '../composables/useAdminProducts'
+import { usePagination } from '../composables/usePagination'
 import { PRODUCT_CATEGORIES, CATEGORY_LABELS } from '../constants/productCategories'
 import PaginationControl from './PaginationControl.vue'
 import LoadingSpinner from './LoadingSpinner.vue'
@@ -59,30 +60,18 @@ const filteredProducts = computed(() => {
 })
 
 // --- Paginación de la tabla ---
-const currentPage = ref(1)
-
-const totalPages = computed(() =>
-  Math.max(1, Math.ceil(filteredProducts.value.length / TABLE_PAGE_SIZE))
-)
-
-const paginatedProducts = computed(() => {
-  const start = (currentPage.value - 1) * TABLE_PAGE_SIZE
-  return filteredProducts.value.slice(start, start + TABLE_PAGE_SIZE)
-})
+const {
+  currentPage,
+  totalPages,
+  paginatedItems: paginatedProducts,
+  goToPage,
+  resetPage,
+} = usePagination(filteredProducts, TABLE_PAGE_SIZE)
 
 function selectCategory(category) {
   activeCategory.value = category
-  currentPage.value = 1
+  resetPage()
 }
-
-function goToPage(page) {
-  currentPage.value = page
-}
-
-// Si se borran productos y la página actual deja de existir, vuelve a la última
-watch(totalPages, (newTotal) => {
-  if (currentPage.value > newTotal) currentPage.value = newTotal
-})
 
 async function handleToggleAvailability(product) {
   actionError.value = ''
