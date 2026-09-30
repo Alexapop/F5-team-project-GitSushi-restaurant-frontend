@@ -2,6 +2,10 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { authService } from '../services/authService'
 
+  function extractRole(user) {
+    return user?.roles?.[0] ?? null
+  }
+
 export const useAuthStore = defineStore('auth', () => {
   const user = ref(null)
   const role = ref(null)
@@ -14,7 +18,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     try {
       user.value = await authService.login(credentials)
-      role.value = user.value?.role ?? null
+      role.value = extractRole(user.value)
 
       return user.value
     } finally {
@@ -25,7 +29,7 @@ export const useAuthStore = defineStore('auth', () => {
   async function fetchCurrentUser() {
     try {
       user.value = await authService.getCurrentUser()
-      role.value = user.value?.role ?? null
+      role.value = extractRole(user.value)
     } catch {
       user.value = null
       role.value = null
