@@ -2,6 +2,9 @@
 
 import OrderTicket from "../components/OrderTicket.vue";
 import OrderHistorySection from "../components/OrderHistorySection.vue";
+import { useAuthStore } from "../stores/auth";
+
+const authStore = useAuthStore();
 
 const order = {
   orderNumber: "GS-2026-00125",
@@ -40,6 +43,6 @@ const order = {
       :payment-method="order.paymentMethod"
     />
 
-    <OrderHistorySection />
+    <OrderHistorySection v-if="authStore.isAuthenticated" />
   </main>
 </template>
