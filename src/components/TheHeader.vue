@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cart'
 import { useAuthStore } from '../stores/auth'
 import { canAccess } from '../router/guards'
+import { getRoleLabel } from '../constants/roles'
 import { MOBILE_NAV_ID, NAV_LINKS } from '../constants/navigation'
 import NavLinks from './NavLinks.vue'
 import MobileNavMenu from './MobileNavMenu.vue'
@@ -19,6 +20,8 @@ const cartStore = useCartStore()
 const authStore = useAuthStore()
 
 const isMenuOpen = ref(false)
+
+const roleLabel = computed(() => getRoleLabel(authStore.role))
 
 // Los permisos se leen del router (meta.roles): una sola fuente de verdad.
 const visibleLinks = computed(() =>
@@ -72,6 +75,8 @@ async function handleLogout() {
       </div>
 
       <div v-else class="the-header__auth">
+        <span v-if="roleLabel" class="the-header__role">{{ roleLabel }}</span>
+
         <UserMenu
           :user="authStore.user"
           :role="authStore.role"
@@ -143,6 +148,10 @@ async function handleLogout() {
 
 .the-header__auth {
   @apply hidden items-center gap-2 xl:flex;
+}
+
+.the-header__role {
+  @apply rounded-full border border-[#C4C4C4] bg-white px-3 py-1 text-sm font-medium text-on-surface;
 }
 
 .the-header__login {
