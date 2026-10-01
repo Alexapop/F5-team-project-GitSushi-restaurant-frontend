@@ -1,129 +1,26 @@
 <script setup>
-import { computed, nextTick, reactive, ref, watch } from 'vue'
+import { nextTick, ref } from 'vue'
 import { useAuthStore } from '../../stores/auth'
-import VoiceDictationButton from '../VoiceDictationButton.vue'
+import ProfileFormField from './ProfileFormField.vue'
+import { useProfileForm } from './useProfileForm'
 
 const authStore = useAuthStore()
 const formElement = ref(null)
 
-const fields = [
-  {
-    name: 'firstName',
-    label: 'Nombre',
-    type: 'text',
-    autocomplete: 'given-name',
-    requiredMessage: 'El nombre es obligatorio.',
-  },
-  {
-    name: 'lastName',
-    label: 'Apellidos',
-    type: 'text',
-    autocomplete: 'family-name',
-    requiredMessage: 'Los apellidos son obligatorios.',
-  },
-  {
-    name: 'email',
-    label: 'Correo electrónico',
-    type: 'email',
-    autocomplete: 'email',
-    requiredMessage: 'El correo electrónico es obligatorio.',
-    fullWidth: true,
-  },
-  {
-    name: 'address',
-    label: 'Dirección',
-    type: 'text',
-    autocomplete: 'street-address',
-    requiredMessage: 'La dirección es obligatoria.',
-    fullWidth: true,
-  },
-  {
-    name: 'postalCode',
-    label: 'Código postal',
-    type: 'text',
-    autocomplete: 'postal-code',
-    requiredMessage: 'El código postal es obligatorio.',
-  },
-  {
-    name: 'city',
-    label: 'Ciudad',
-    type: 'text',
-    autocomplete: 'address-level2',
-    requiredMessage: 'La ciudad es obligatoria.',
-    voiceInput: true,
-  },
-]
-
-const form = reactive({
-  firstName: '',
-  lastName: '',
-  email: '',
-  address: '',
-  postalCode: '',
-  city: '',
-})
-
-const touched = reactive({})
-
-function resetForm() {
-  const user = authStore.user
-
-  fields.forEach(({ name }) => {
-    form[name] = user?.[name] ?? ''
-    touched[name] = false
-  })
-}
-
-watch(
-  () => authStore.user,
-  () => resetForm(),
-  { immediate: true }
-)
-
-const hasChanges = computed(() => {
-  const user = authStore.user
-
-  if (!user) return false
-
-  return fields.some(({ name }) => {
-    return form[name] !== (user[name] ?? '')
-  })
-})
-
-const errors = computed(() => {
-  const result = {}
-
-  fields.forEach(({ name, requiredMessage }) => {
-    if (!form[name].trim()) {
-      result[name] = requiredMessage
-    }
-  })
-
-  if (
-    !result.email &&
-    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())
-  ) {
-    result.email = 'Introduce un correo electrónico válido.'
-  }
-
-  return result
-})
-
-function validateField(field) {
-  touched[field] = true
-}
+const {
+  fields,
+  form,
+  touched,
+  errors,
+  hasChanges,
+  resetForm,
+  validateField,
+  validateForm,
+} = useProfileForm(() => authStore.user)
 
 function handleDictation(field, transcript) {
   form[field] = transcript
   validateField(field)
-}
-
-function validateForm() {
-  fields.forEach(({ name }) => {
-    touched[name] = true
-  })
-
-  return Object.keys(errors.value).length === 0
 }
 
 async function handleSubmit() {
@@ -181,51 +78,15 @@ async function handleSubmit() {
       </p>
 
       <div class="profile-form__grid">
-        <div
+        <ProfileFormField
           v-for="field in fields"
           :key="field.name"
-          :class="{
-            'profile-form__field--full': field.fullWidth,
-          }"
-        >
-          <label :for="field.name">{{ field.label }}</label>
-
-          <div
-            :class="{ 'profile-form__voice-control': field.voiceInput }"
-          >
-            <input
-              :id="field.name"
-              v-model="form[field.name]"
-              :name="field.name"
-              :type="field.type"
-              :autocomplete="field.autocomplete"
-              required
-              :aria-invalid="
-                Boolean(touched[field.name] && errors[field.name])
-              "
-              :aria-describedby="
-                touched[field.name] && errors[field.name]
-                  ? `${field.name}-error`
-                  : undefined
-              "
-              @blur="validateField(field.name)"
-            />
-
-            <VoiceDictationButton
-              v-if="field.voiceInput"
-              :field-label="field.label"
-              @transcript="handleDictation(field.name, $event)"
-            />
-          </div>
-
-          <p
-            v-if="touched[field.name] && errors[field.name]"
-            :id="`${field.name}-error`"
-            class="profile-form__error"
-          >
-            {{ errors[field.name] }}
-          </p>
-        </div>
+          v-model="form[field.name]"
+          :field="field"
+          :error="touched[field.name] ? errors[field.name] ?? '' : ''"
+          @blur="validateField(field.name)"
+          @transcript="handleDictation(field.name, $event)"
+        />
       </div>
 
       <p
@@ -280,32 +141,6 @@ async function handleSubmit() {
 
 .profile-form__grid {
   @apply grid grid-cols-1 gap-5 sm:grid-cols-2;
-}
-
-.profile-form__field--full {
-  @apply sm:col-span-2;
-}
-
-.profile-form label {
-  @apply mb-2 block text-sm font-medium;
-}
-
-.profile-form input {
-  @apply w-full rounded-lg border border-outline
-    bg-surface-container px-4 py-3 outline-none
-    transition focus:border-primary;
-}
-
-.profile-form__voice-control {
-  @apply grid grid-cols-[1fr_auto] items-center gap-x-2 gap-y-1;
-}
-
-.profile-form input[aria-invalid="true"] {
-  @apply border-error;
-}
-
-.profile-form__error {
-  @apply mt-1 text-sm text-error;
 }
 
 .profile-form__notice {
