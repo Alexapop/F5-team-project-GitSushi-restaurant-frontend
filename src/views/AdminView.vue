@@ -1,12 +1,11 @@
 <script setup>
-import AdminProductsPanel from '../components/AdminProductsPanel.vue'
-import AdminInvoicesPanel from '../components/AdminInvoicesPanel.vue'
+// Responsabilidad: contenedor del panel de administración.
+// Pinta el inicio o la sección elegida según la ruta hija (/admin, /admin/productos...).
 </script>
 
 <template>
   <main class="admin-view">
-    <AdminProductsPanel />
-    <AdminInvoicesPanel />
+    <router-view />
   </main>
 </template>
 
@@ -14,6 +13,6 @@ import AdminInvoicesPanel from '../components/AdminInvoicesPanel.vue'
 @reference "../style.css";
 
 .admin-view {
-  @apply mx-auto flex max-w-[1200px] flex-col gap-8 px-5 py-8;
+  @apply mx-auto max-w-[1200px] px-5 py-8;
 }
 </style>

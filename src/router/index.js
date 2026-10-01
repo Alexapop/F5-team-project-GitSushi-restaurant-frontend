@@ -50,9 +50,28 @@ const routes = [
   },
   {
     path: '/admin',
-    name: 'admin',
     component: () => import('../views/AdminView.vue'),
     meta: { roles: [ADMIN] },
+    children: [
+      {
+        path: '',
+        name: 'admin',
+        component: () => import('../views/admin/AdminHomeView.vue'),
+        meta: { roles: [ADMIN] },
+      },
+      {
+        path: 'productos',
+        name: 'admin-productos',
+        component: () => import('../views/admin/AdminProductsView.vue'),
+        meta: { roles: [ADMIN] },
+      },
+      {
+        path: 'facturacion',
+        name: 'admin-facturacion',
+        component: () => import('../views/admin/AdminInvoicesView.vue'),
+        meta: { roles: [ADMIN] },
+      },
+    ],
   },
   {
     path: '/login',
