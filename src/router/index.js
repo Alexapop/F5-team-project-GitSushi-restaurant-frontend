@@ -77,6 +77,12 @@ const routes = [
         component: () => import('../views/admin/AdminSalesReportView.vue'),
         meta: { roles: [ADMIN] },
       },
+      {
+        path: 'kpi',
+        name: 'admin-kpi',
+        component: () => import('../views/admin/AdminKpiView.vue'),
+        meta: { roles: [ADMIN] },
+      },
     ],
   },
   {
