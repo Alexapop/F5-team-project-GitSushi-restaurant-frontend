@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { getExclusiveOffers } from "../services/offers.service";
+import { getExclusiveOffers, consumeOffer as requestConsumeOffer } from "../services/offers.service";
 
 export const useExclusiveOffersStore = defineStore("exclusiveOffers", {
   state: () => ({
@@ -31,6 +31,21 @@ export const useExclusiveOffersStore = defineStore("exclusiveOffers", {
         console.error("[exclusiveOffers] Error al obtener las ofertas:", err);
       } finally {
         this.isLoading = false;
+      }
+    },
+
+    // Marca una oferta como canjeada tras usarla en un pedido confirmado.
+    // No lanza: un fallo al consumir no debe impedir que el pedido, ya
+    // creado con éxito, siga su curso.
+    async consumeOffer(coupon) {
+      try {
+        const updatedOffer = await requestConsumeOffer(coupon);
+        const index = this.offers.findIndex((o) => o.coupon === coupon);
+        if (index !== -1) {
+          this.offers[index] = updatedOffer;
+        }
+      } catch (err) {
+        console.error("[exclusiveOffers] Error al consumir la oferta:", err);
       }
     },
   },
