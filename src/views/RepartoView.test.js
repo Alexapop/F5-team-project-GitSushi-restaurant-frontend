@@ -99,4 +99,99 @@ describe('RepartoView', () => {
 
     wrapper.unmount()
   })
+  it('actualiza las tarjetas automáticamente sin desmontar la vista', async () => {
+  vi.useFakeTimers()
+  let wrapper
+
+  try {
+    getDeliveryMetrics
+      .mockResolvedValueOnce(metrics)
+      .mockResolvedValue({
+        ...metrics,
+        readyCount: 3,
+        inTransitCount: 3,
+      })
+
+    wrapper = mount(RepartoView)
+    await vi.advanceTimersByTimeAsync(0)
+
+    expect(
+      wrapper.getComponent(DeliveryMetrics).props('metrics').readyCount
+    ).toBe(4)
+
+    await vi.advanceTimersByTimeAsync(10_000)
+
+    expect(getDeliveryMetrics).toHaveBeenCalledTimes(2)
+    expect(
+      wrapper.getComponent(DeliveryMetrics).props('metrics').readyCount
+    ).toBe(3)
+    expect(
+      wrapper.getComponent(DeliveryMetrics).props('metrics').inTransitCount
+    ).toBe(3)
+  } finally {
+    wrapper?.unmount()
+    vi.useRealTimers()
+  }
+})
+
+it('conserva los últimos datos si falla una actualización y se recupera', async () => {
+  vi.useFakeTimers()
+  let wrapper
+
+  try {
+    getDeliveryMetrics
+      .mockResolvedValueOnce(metrics)
+      .mockRejectedValueOnce(new Error('Network error'))
+      .mockResolvedValue({
+        ...metrics,
+        deliveredTodayCount: 8,
+      })
+
+    wrapper = mount(RepartoView)
+    await vi.advanceTimersByTimeAsync(0)
+    await vi.advanceTimersByTimeAsync(10_000)
+
+    expect(wrapper.getComponent(DeliveryMetrics).props('metrics')).toEqual(
+      metrics
+    )
+    expect(wrapper.get('[role="alert"]').text()).toContain(
+      'Se muestran los últimos disponibles.'
+    )
+
+    await vi.advanceTimersByTimeAsync(10_000)
+
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+    expect(
+      wrapper.getComponent(DeliveryMetrics).props('metrics')
+        .deliveredTodayCount
+    ).toBe(8)
+  } finally {
+    wrapper?.unmount()
+    vi.useRealTimers()
+  }
+})
+
+it('deja de consultar al salir de la vista', async () => {
+  vi.useFakeTimers()
+  let wrapper
+
+  try {
+    getDeliveryMetrics.mockResolvedValue(metrics)
+
+    wrapper = mount(RepartoView)
+    await vi.advanceTimersByTimeAsync(0)
+
+    expect(getDeliveryMetrics).toHaveBeenCalledTimes(1)
+
+    wrapper.unmount()
+    wrapper = null
+
+    await vi.advanceTimersByTimeAsync(30_000)
+
+    expect(getDeliveryMetrics).toHaveBeenCalledTimes(1)
+  } finally {
+    wrapper?.unmount()
+    vi.useRealTimers()
+  }
+})
 })

@@ -1,36 +1,15 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
 import DeliveryMetrics from '../components/DeliveryMetrics.vue'
-import { getDeliveryMetrics } from '../services/delivery.service'
+import { useDeliveryMetrics } from '../composables/useDeliveryMetrics'
 
-const metrics = ref(null)
-const isLoading = ref(true)
-const error = ref('')
-
-const isEmpty = computed(() => {
-  if (!metrics.value) return false
-
-  return (
-    metrics.value.readyCount === 0 &&
-    metrics.value.inTransitCount === 0 &&
-    metrics.value.deliveredTodayCount === 0
-  )
-})
-
-async function loadMetrics() {
-  isLoading.value = true
-  error.value = ''
-
-  try {
-    metrics.value = await getDeliveryMetrics()
-  } catch {
-    error.value = 'No se han podido cargar los datos de reparto.'
-  } finally {
-    isLoading.value = false
-  }
-}
-
-onMounted(loadMetrics)
+const {
+  metrics,
+  isLoading,
+  isRefreshing,
+  error,
+  isEmpty,
+  refresh,
+} = useDeliveryMetrics()
 </script>
 
 <template>
@@ -39,6 +18,7 @@ onMounted(loadMetrics)
       <h1 class="delivery-view__title">Resumen de reparto</h1>
       <p class="delivery-view__description">
         Vista general de los pedidos del restaurante.
+        Actualización automática cada 10 segundos.
       </p>
     </header>
 
@@ -46,20 +26,24 @@ onMounted(loadMetrics)
       Cargando datos de reparto…
     </p>
 
-    <div v-else-if="error" class="delivery-view__error">
-      <p role="alert">{{ error }}</p>
+    <template v-else>
+      <div v-if="error" class="delivery-view__error">
+        <p role="alert">{{ error }}</p>
 
-      <button
-        type="button"
-        class="delivery-view__retry"
-        @click="loadMetrics"
-      >
-        Reintentar
-      </button>
-    </div>
+        <button
+          type="button"
+          class="delivery-view__retry"
+          :disabled="isRefreshing"
+          @click="refresh"
+        >
+          Reintentar
+        </button>
+      </div>
 
-    <template v-else-if="metrics">
-      <DeliveryMetrics :metrics="metrics" />
+      <DeliveryMetrics
+        v-if="metrics"
+        :metrics="metrics"
+      />
 
       <p v-if="isEmpty" role="status">
         No hay pedidos listos, en tránsito ni entregados hoy.
@@ -90,6 +74,7 @@ onMounted(loadMetrics)
 
 .delivery-view__retry {
   @apply cursor-pointer rounded-lg bg-primary px-5 py-3
-    font-semibold text-white;
+    font-semibold text-white disabled:cursor-not-allowed
+    disabled:opacity-50;
 }
 </style>
