@@ -179,4 +179,43 @@ describe("OrderConfirmation", () => {
     expect(cartStore.isEmpty).toBe(false);
     expect(router.currentRoute.value.name).toBe("cesta");
   });
-});
+
+  it("consumes the exclusive offer applied to a product when the order is confirmed", async () => {
+    vi.spyOn(ordersService, "createOrder").mockResolvedValue({
+      id: 99,
+      paymentStatus: "PENDING_CASH",
+    });
+    const { wrapper, cartStore, checkoutStore } = await mountOrderConfirmation();
+    const offersStore = useExclusiveOffersStore();
+    offersStore.offers = [
+      { id: 1, used: false, coupon: "coupon-a", finalPrice: 8.5, discountRate: 15, product: { id: 1 } },
+    ];
+    vi.spyOn(offersStore, "consumeOffer").mockResolvedValue();
+    cartStore.addProduct({ id: 1, name: "Salmon Roll", price: 10 });
+    checkoutStore.setPaymentMethod("cashier");
+    await flushPromises();
+
+    await wrapper.find(".order-confirmation__button").trigger("click");
+    await flushPromises();
+
+    expect(offersStore.consumeOffer).toHaveBeenCalledWith("coupon-a");
+  });
+
+  it("does not try to consume anything when no product in the order has an active offer", async () => {
+    vi.spyOn(ordersService, "createOrder").mockResolvedValue({
+      id: 99,
+      paymentStatus: "PENDING_CASH",
+    });
+    const { wrapper, cartStore, checkoutStore } = await mountOrderConfirmation();
+    const offersStore = useExclusiveOffersStore();
+    vi.spyOn(offersStore, "consumeOffer");
+    cartStore.addProduct({ id: 1, name: "Salmon Roll", price: 10 });
+    checkoutStore.setPaymentMethod("cashier");
+    await flushPromises();
+
+    await wrapper.find(".order-confirmation__button").trigger("click");
+    await flushPromises();
+
+    expect(offersStore.consumeOffer).not.toHaveBeenCalled();
+  });
+})
