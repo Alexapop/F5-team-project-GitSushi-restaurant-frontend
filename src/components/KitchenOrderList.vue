@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import KitchenOrderCard from './KitchenOrderCard.vue'
+import LoadingSpinner from './LoadingSpinner.vue'
 
 const props = defineProps({
   orders: {
@@ -73,12 +74,11 @@ const filteredOrders = computed(() => {
 </button>
 </div>
 
-    <p
+    <LoadingSpinner
       v-if="isLoading"
-      class="card p-6 text-on-surface-variant"
-    >
-      Cargando comandas...
-    </p>
+      class="card"
+      label="Cargando comandas..."
+    />
 
     <p
       v-else-if="error"

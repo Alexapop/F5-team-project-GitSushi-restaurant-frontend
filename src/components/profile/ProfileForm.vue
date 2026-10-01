@@ -2,6 +2,7 @@
 import { nextTick, ref } from 'vue'
 import { useAuthStore } from '../../stores/auth'
 import ProfileFormField from './ProfileFormField.vue'
+import LoadingSpinner from '../LoadingSpinner.vue'
 import { useProfileForm } from './useProfileForm'
 
 const authStore = useAuthStore()
@@ -50,13 +51,10 @@ async function handleSubmit() {
   >
     <h2 class="profile-form__title">Datos personales</h2>
 
-    <p
+    <LoadingSpinner
       v-if="authStore.isFetchingUser"
-      class="profile-form__notice"
-      role="status"
-    >
-      Cargando tus datos…
-    </p>
+      label="Cargando tus datos…"
+    />
 
     <p
       v-else-if="!authStore.user"

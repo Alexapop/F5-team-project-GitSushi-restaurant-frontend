@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, onUnmounted } from 'vue'
+import ProductImage from './ProductImage.vue'
 
 // Recibe un producto y emite add-to-cart con la cantidad elegida.
 // No conoce el store de la cesta (eso llega en otra parte): queda desacoplado.
@@ -66,11 +67,10 @@ onUnmounted(() => {
 
 <template>
   <article class="product-card">
-    <img
+    <ProductImage
       class="product-card__image"
       :src="imageSrc"
       :alt="`Foto de ${product.name}`"
-      loading="lazy"
     />
 
     <div class="product-card__body">
