@@ -1,5 +1,8 @@
 <script setup>
 import heroImage from '../assets/hero.jfif'
+import { useAuthStore } from '../stores/auth'
+
+const authStore = useAuthStore()
 
 function scrollToCarta() {
   document.getElementById('productos-carta')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -35,6 +38,7 @@ function scrollToCarta() {
           </button>
 
           <router-link
+            v-if="authStore.isAuthenticated"
             :to="{ name: 'mi-pedido' }"
             class="border border-outline text-on-surface px-6 py-3 rounded-lg font-semibold text-center hover:bg-surface-container-high transition"
           >
