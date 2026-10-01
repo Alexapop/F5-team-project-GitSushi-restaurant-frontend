@@ -47,7 +47,7 @@ describe('LoginForm', () => {
     expect(wrapper.text()).toContain('Iniciar sesión')
   })
 
-  it('sends the credentials, stores the user and redirects to profile', async () => {
+  it('sends the credentials, stores the user and redirects to the menu', async () => {
     const user = {
       email: 'user@test.com',
       firstName: 'Andrea',
@@ -73,7 +73,7 @@ describe('LoginForm', () => {
       password: '123456',
     })
 
-    expect(pushMock).toHaveBeenCalledWith('/perfil')
+    expect(pushMock).toHaveBeenCalledWith({ name: 'carta' })
   })
 
   it('shows an error when login fails', async () => {
