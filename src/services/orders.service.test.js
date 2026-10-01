@@ -19,8 +19,8 @@ describe('orders.service', () => {
 
     await createOrder({ items, chefNote: 'Sin wasabi', channel: 'sala', paymentMethod: 'CASH_ONSITE' })
 
-    expect(api.post).toHaveBeenCalledWith('/orders', {
-      items,
+expect(api.post).toHaveBeenCalledWith('/api/v1/orders', {
+        items,
       chefNote: 'Sin wasabi',
       channel: 'ONSITE',
       paymentMethod: 'CASH_ONSITE',
@@ -32,8 +32,8 @@ describe('orders.service', () => {
 
     await createOrder({ items: [], chefNote: '', channel: 'domicilio', paymentMethod: 'ONLINE_CARD' })
 
-    expect(api.post).toHaveBeenCalledWith('/orders', {
-      items: [],
+expect(api.post).toHaveBeenCalledWith('/api/v1/orders', {
+        items: [],
       chefNote: '',
       channel: 'ONLINE',
       paymentMethod: 'ONLINE_CARD',
