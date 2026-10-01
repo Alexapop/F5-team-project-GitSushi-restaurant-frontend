@@ -215,7 +215,6 @@ describe('AdminProductsPanel', () => {
       await wrapper.find('#product-image').setValue('merge-nigiri.png')
       await wrapper.find('#product-category').setValue('NIGIRI')
       await wrapper.find('#product-price').setValue('6.50')
-      await wrapper.find('#product-stock').setValue('20')
       await wrapper.find('#product-description').setValue('Nigiri de salmón')
     }
 
