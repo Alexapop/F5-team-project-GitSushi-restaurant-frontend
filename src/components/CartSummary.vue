@@ -135,8 +135,13 @@ function handleRemove(line) {
 .cart-summary__list {
   @apply flex flex-col gap-3;
 }
+/* Móvil: el producto ocupa la primera fila y los controles van debajo.
+   Desde sm: todo en una sola fila. */
 .cart-summary__line {
-  @apply grid grid-cols-[1fr_auto_auto_auto] items-center gap-3 border-b border-outline-variant pb-3;
+  @apply grid grid-cols-[1fr_auto_auto] items-center gap-3 border-b border-outline-variant pb-3 sm:grid-cols-[1fr_auto_auto_auto];
+}
+.cart-summary__line-info {
+  @apply col-span-3 sm:col-span-1;
 }
 .cart-summary__line-name {
   @apply font-medium text-on-surface;
@@ -151,10 +156,11 @@ function handleRemove(line) {
   @apply mt-0.5;
 }
 .cart-summary__quantity {
-  @apply flex items-center gap-2 rounded-full border border-outline-variant px-2 py-1;
+  @apply flex items-center justify-self-start gap-1 rounded-full border border-outline-variant px-1;
 }
+/* 44x44px: tamaño mínimo cómodo para el tacto */
 .cart-summary__quantity-btn {
-  @apply flex h-6 w-6 items-center justify-center rounded-full text-on-surface transition-colors hover:bg-primary-container;
+  @apply flex h-11 w-11 items-center justify-center rounded-full text-on-surface transition-colors hover:bg-primary-container;
 }
 .cart-summary__quantity-value {
   @apply w-4 text-center text-sm;
@@ -163,7 +169,7 @@ function handleRemove(line) {
   @apply font-heading font-semibold text-primary;
 }
 .cart-summary__remove-btn {
-  @apply text-on-surface-variant transition-colors hover:text-error;
+  @apply flex h-11 w-11 items-center justify-center text-on-surface-variant transition-colors hover:text-error;
 }
 .cart-summary__totals {
   @apply flex flex-col gap-1 pt-2;
