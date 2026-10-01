@@ -86,4 +86,17 @@ it('reverts the add button after the feedback delay', async () => {
 
   vi.useRealTimers()
 })
+
+it('resolves a bare filename from the backend to the public products path', () => {
+  const realProduct = { ...product, imageUrl: 'hello-edamame.png' }
+  const wrapper = mount(ProductCard, { props: { product: realProduct } })
+
+  expect(wrapper.find('.product-card__image').attributes('src')).toBe('/products/hello-edamame.png')
+})
+
+it('uses a full URL as-is when the backend already sends one', () => {
+  const wrapper = mount(ProductCard, { props: { product } })
+
+  expect(wrapper.find('.product-card__image').attributes('src')).toBe('https://placehold.co/300x200')
+})
 })

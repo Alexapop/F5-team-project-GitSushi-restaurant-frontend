@@ -2,7 +2,7 @@
 import { ref, computed, onUnmounted } from 'vue'
 
 // Recibe un producto y emite add-to-cart con la cantidad elegida.
-// No conoce el store de la cesta (eso llega en GSF-06): queda desacoplado.
+// No conoce el store de la cesta (eso llega en otra parte): queda desacoplado.
 const props = defineProps({
   product: {
     type: Object,
@@ -26,6 +26,15 @@ const formattedPrice = computed(() =>
     currency: 'EUR',
   })
 )
+
+// El backend solo guarda el nombre del archivo (p. ej. "hello-edamame.png"),
+// servido desde public/products/. Si en cambio llega una URL completa
+// (como las usadas en tests, o un futuro storage externo), se usa tal cual.
+const imageSrc = computed(() => {
+  const url = props.product.imageUrl
+  if (!url) return ''
+  return url.startsWith('http') ? url : `/products/${url}`
+})
 
 function increaseQuantity() {
   quantity.value += 1
@@ -59,7 +68,7 @@ onUnmounted(() => {
   <article class="product-card">
     <img
       class="product-card__image"
-      :src="product.imageUrl"
+      :src="imageSrc"
       :alt="`Foto de ${product.name}`"
       loading="lazy"
     />
