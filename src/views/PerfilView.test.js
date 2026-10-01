@@ -3,12 +3,12 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import PerfilView from './PerfilView.vue'
 import ExclusiveOffersCard from '../components/ExclusiveOffersCard.vue'
-import * as exclusiveOffersMock from '../mocks/exclusiveOffers.mock'
+import * as offersService from '../services/offers.service'
 
 describe('PerfilView', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
-    vi.spyOn(exclusiveOffersMock, 'getExclusiveOffers').mockResolvedValue({ offers: [] })
+    vi.spyOn(offersService, 'getExclusiveOffers').mockResolvedValue([])
     setActivePinia(createPinia())
   })
 
