@@ -93,7 +93,7 @@ describe("OrderConfirmation", () => {
     const { wrapper, cartStore } = await mountOrderConfirmation();
     const offersStore = useExclusiveOffersStore();
     offersStore.offers = [
-      { productId: 1, finalPrice: 8.5, discountRate: 15, expiresAt: null },
+      { used: false, finalPrice: 8.5, discountRate: 15, product: { id: 1 } },
     ];
     cartStore.addProduct({ id: 1, name: "Salmon Roll", price: 10 });
     await flushPromises();
