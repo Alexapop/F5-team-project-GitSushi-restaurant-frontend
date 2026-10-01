@@ -6,6 +6,7 @@ export const INVOICES_PAGE_SIZE = 5
 
 // Pide una página de facturas. `page` empieza en 1 en el front y en 0 en Spring.
 // `search` filtra por ID de factura, mesa o cliente; si va vacío no se envía.
+// El backend pagina con VIA_DTO: { content: [...], page: { totalPages, ... } }.
 export async function getPaidInvoices({ page = 1, size = INVOICES_PAGE_SIZE, search = '' } = {}) {
   const trimmedSearch = search.trim()
 
@@ -19,6 +20,6 @@ export async function getPaidInvoices({ page = 1, size = INVOICES_PAGE_SIZE, sea
 
   return {
     items: response.data.content,
-    totalPages: response.data.totalPages,
+    totalPages: response.data.page.totalPages,
   }
 }
