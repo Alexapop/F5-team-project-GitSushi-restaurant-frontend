@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import PaginationControl from './PaginationControl.vue'
+import LoadingSpinner from './LoadingSpinner.vue'
 import { useOrderHistory } from '../composables/useOrderHistory'
 import { useCartStore } from '../stores/cart'
 
@@ -63,7 +64,7 @@ function summarizeItems(items) {
   <section class="order-history" aria-label="Historial de pedidos anteriores">
     <h2 class="order-history__title">Historial de mis pedidos anteriores</h2>
 
-    <p v-if="isLoading" class="order-history__status">Cargando tu historial de pedidos...</p>
+    <LoadingSpinner v-if="isLoading" label="Cargando tu historial de pedidos..." />
     <p v-else-if="error" class="order-history__status order-history__status--error">
       {{ error }}
     </p>
