@@ -24,6 +24,7 @@ describe('router - secciones del admin', () => {
     expect(await navigateAs(ROLES.ADMIN, '/admin/productos')).toBe('admin-productos')
     expect(await navigateAs(ROLES.ADMIN, '/admin/facturacion')).toBe('admin-facturacion')
     expect(await navigateAs(ROLES.ADMIN, '/admin/resumen-ventas')).toBe('admin-resumen-ventas')
+    expect(await navigateAs(ROLES.ADMIN, '/admin/kpi')).toBe('admin-kpi')
   })
 
   it('un cocinero no puede entrar en una sección del admin', async () => {
