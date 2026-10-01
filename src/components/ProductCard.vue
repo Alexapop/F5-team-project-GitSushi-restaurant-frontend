@@ -137,16 +137,17 @@ onUnmounted(() => {
   @apply mt-2 flex items-center justify-between gap-2;
 }
 .product-card__quantity {
-  @apply flex items-center gap-2 rounded-full border border-outline-variant px-2 py-1;
+  @apply flex items-center gap-1 rounded-full border border-outline-variant px-1;
 }
+/* 44x44px: tamaño mínimo cómodo para el tacto */
 .product-card__quantity-btn {
-  @apply flex h-6 w-6 items-center justify-center rounded-full text-on-surface transition-colors hover:bg-primary-container disabled:cursor-not-allowed disabled:opacity-40;
+  @apply flex h-11 w-11 items-center justify-center rounded-full text-on-surface transition-colors hover:bg-primary-container disabled:cursor-not-allowed disabled:opacity-40;
 }
 .product-card__quantity-value {
   @apply w-4 text-center text-sm;
 }
 .product-card__add-btn {
-  @apply rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-on-primary transition-colors hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-80;
+  @apply min-h-11 rounded-full bg-primary px-5 text-sm font-medium text-on-primary transition-colors hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-80;
 }
 .product-card__add-btn--added {
   @apply bg-primary;

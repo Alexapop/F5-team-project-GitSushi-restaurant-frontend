@@ -19,7 +19,8 @@ const handleSubmit = async () => {
       password: password.value,
     })
 
-    await router.push('/perfil')
+    // La carta es la única vista que tienen todos los roles.
+    await router.push({ name: 'carta' })
   } catch (error) {
     errorMessage.value =
       error.response?.data?.message ||
