@@ -1,6 +1,7 @@
 <script setup>
 import { computed, nextTick, reactive, ref, watch } from 'vue'
 import { useAuthStore } from '../../stores/auth'
+import ProfileFormField from './ProfileFormField.vue'
 
 const authStore = useAuthStore()
 const formElement = ref(null)
@@ -174,41 +175,14 @@ async function handleSubmit() {
       </p>
 
       <div class="profile-form__grid">
-        <div
+        <ProfileFormField
           v-for="field in fields"
           :key="field.name"
-          :class="{
-            'profile-form__field--full': field.fullWidth,
-          }"
-        >
-          <label :for="field.name">{{ field.label }}</label>
-
-          <input
-            :id="field.name"
-            v-model="form[field.name]"
-            :name="field.name"
-            :type="field.type"
-            :autocomplete="field.autocomplete"
-            required
-            :aria-invalid="
-              Boolean(touched[field.name] && errors[field.name])
-            "
-            :aria-describedby="
-              touched[field.name] && errors[field.name]
-                ? `${field.name}-error`
-                : undefined
-            "
-            @blur="validateField(field.name)"
-          />
-
-          <p
-            v-if="touched[field.name] && errors[field.name]"
-            :id="`${field.name}-error`"
-            class="profile-form__error"
-          >
-            {{ errors[field.name] }}
-          </p>
-        </div>
+          v-model="form[field.name]"
+          :field="field"
+          :error="touched[field.name] ? errors[field.name] ?? '' : ''"
+          @blur="validateField(field.name)"
+        />
       </div>
 
       <p
@@ -263,28 +237,6 @@ async function handleSubmit() {
 
 .profile-form__grid {
   @apply grid grid-cols-1 gap-5 sm:grid-cols-2;
-}
-
-.profile-form__field--full {
-  @apply sm:col-span-2;
-}
-
-.profile-form label {
-  @apply mb-2 block text-sm font-medium;
-}
-
-.profile-form input {
-  @apply w-full rounded-lg border border-outline
-    bg-surface-container px-4 py-3 outline-none
-    transition focus:border-primary;
-}
-
-.profile-form input[aria-invalid="true"] {
-  @apply border-error;
-}
-
-.profile-form__error {
-  @apply mt-1 text-sm text-error;
 }
 
 .profile-form__notice {
