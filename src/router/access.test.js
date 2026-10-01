@@ -32,8 +32,20 @@ describe('router - acceso por rol', () => {
     expect(await navigateAs(ROLES.CUSTOMER, '/cesta')).toBe('cesta')
   })
 
-  it('el cliente que intenta entrar en cocina vuelve a la carta', async () => {
-    expect(await navigateAs(ROLES.CUSTOMER, '/cocina')).toBe('carta')
+  it('el cliente que intenta entrar en cocina ve acceso denegado', async () => {
+    expect(await navigateAs(ROLES.CUSTOMER, '/cocina')).toBe('acceso-denegado')
+  })
+
+  it('el cocinero que intenta entrar en admin ve acceso denegado', async () => {
+    expect(await navigateAs(ROLES.COOK, '/admin')).toBe('acceso-denegado')
+  })
+
+  it('el usuario logueado que abre el login vuelve a la carta', async () => {
+    expect(await navigateAs(ROLES.CUSTOMER, '/login')).toBe('carta')
+  })
+
+  it('el invitado que intenta ver acceso denegado va a iniciar sesión', async () => {
+    expect(await navigateAs(ROLES.GUEST, '/acceso-denegado')).toBe('login')
   })
 
   it('el admin entra en cocina, reparto y admin', async () => {
@@ -44,7 +56,7 @@ describe('router - acceso por rol', () => {
 
   it('el repartidor entra en reparto pero no en cocina', async () => {
     expect(await navigateAs(ROLES.DELIVERY, '/reparto')).toBe('reparto')
-    expect(await navigateAs(ROLES.DELIVERY, '/cocina')).toBe('carta')
+    expect(await navigateAs(ROLES.DELIVERY, '/cocina')).toBe('acceso-denegado')
   })
 
   it('una URL que no existe manda al invitado a iniciar sesión', async () => {

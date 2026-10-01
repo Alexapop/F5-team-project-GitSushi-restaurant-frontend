@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest'
-import { canAccess, getRedirectFor, isUnknownRoute } from './guards'
+import {
+  ACCESS_DENIED_ROUTE,
+  canAccess,
+  getDeniedRedirectFor,
+  getRedirectFor,
+  isGuestOnlyRoute,
+  isUnknownRoute,
+} from './guards'
 import { ROLES } from '../constants/roles'
 
 function buildRoute(roles) {
@@ -37,8 +44,42 @@ describe('guards', () => {
       expect(getRedirectFor(ROLES.GUEST)).toEqual({ name: 'login' })
     })
 
-    it('devuelve a la carta a un usuario logueado sin permiso', () => {
+    it('devuelve a la carta al usuario logueado que abre una URL que no existe', () => {
       expect(getRedirectFor(ROLES.COOK)).toEqual({ name: 'carta' })
+    })
+  })
+
+  describe('isGuestOnlyRoute', () => {
+    it('detecta una ruta que solo puede ver el invitado', () => {
+      expect(isGuestOnlyRoute(buildRoute([ROLES.GUEST]))).toBe(true)
+    })
+
+    it('no marca una ruta compartida con usuarios logueados', () => {
+      expect(isGuestOnlyRoute(buildRoute([ROLES.GUEST, ROLES.CUSTOMER]))).toBe(false)
+    })
+
+    it('una ruta pública no es solo para invitados', () => {
+      expect(isGuestOnlyRoute({ meta: {} })).toBe(false)
+    })
+  })
+
+  describe('getDeniedRedirectFor', () => {
+    it('manda al invitado a iniciar sesión', () => {
+      const route = buildRoute([ROLES.ADMIN])
+
+      expect(getDeniedRedirectFor(route, ROLES.GUEST)).toEqual({ name: 'login' })
+    })
+
+    it('devuelve a la carta al usuario logueado que abre una vista solo de invitados', () => {
+      const route = buildRoute([ROLES.GUEST])
+
+      expect(getDeniedRedirectFor(route, ROLES.CUSTOMER)).toEqual({ name: 'carta' })
+    })
+
+    it('manda a acceso denegado al usuario logueado que abre una vista de otro rol', () => {
+      const route = buildRoute([ROLES.ADMIN])
+
+      expect(getDeniedRedirectFor(route, ROLES.COOK)).toEqual({ name: ACCESS_DENIED_ROUTE })
     })
   })
 
