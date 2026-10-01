@@ -4,7 +4,7 @@
   <main id="productos-carta" class="carta-view">
     <h1 class="carta-view__title">Nuestra carta</h1>
 
-    <p v-if="isLoading" class="carta-view__status">Cargando la carta...</p>
+    <LoadingSpinner v-if="isLoading" label="Cargando la carta..." />
     <p v-else-if="error" class="carta-view__status carta-view__status--error">
       {{ error }}
     </p>
@@ -40,6 +40,7 @@ import { useCartStore } from "../stores/cart";
 import ProductCard from "../components/ProductCard.vue";
 import PaginationControl from "../components/PaginationControl.vue";
 import Hero from "../components/Hero.vue";
+import LoadingSpinner from "../components/LoadingSpinner.vue";
 
 const {
   products,

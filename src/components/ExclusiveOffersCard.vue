@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { useExclusiveOffersStore } from '../stores/exclusiveOffers'
+import LoadingSpinner from './LoadingSpinner.vue'
 
 const offersStore = useExclusiveOffersStore()
 const copiedOfferId = ref(null)
@@ -36,7 +37,7 @@ async function handleCopyCoupon(offer) {
   <section class="exclusive-offers" aria-label="Ofertas exclusivas desbloqueadas">
     <h2 class="exclusive-offers__title">Ofertas Exclusivas Desbloqueadas</h2>
 
-    <p v-if="offersStore.isLoading" class="exclusive-offers__status">Cargando tus ofertas...</p>
+    <LoadingSpinner v-if="offersStore.isLoading" label="Cargando tus ofertas..." />
     <p v-else-if="offersStore.error" class="exclusive-offers__status exclusive-offers__status--error">
       {{ offersStore.error }}
     </p>
