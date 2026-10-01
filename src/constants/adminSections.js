@@ -28,11 +28,11 @@ export const ADMIN_SECTIONS = Object.freeze([
     available: false,
   },
   {
-    key: 'sales-pdf',
-    title: 'Resumen en PDF',
-    description: 'Descargar ventas del periodo',
+    key: 'sales-report',
+    title: 'Resumen de ventas',
+    description: 'Totales del periodo y descarga en PDF',
     icon: 'download',
-    routeName: null,
-    available: false,
+    routeName: 'admin-resumen-ventas',
+    available: true,
   },
 ])
