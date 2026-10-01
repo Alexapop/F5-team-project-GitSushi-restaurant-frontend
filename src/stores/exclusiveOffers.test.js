@@ -88,4 +88,32 @@ describe('useExclusiveOffersStore', () => {
     expect(offersStore.offers).toEqual([])
     expect(offersStore.isLoading).toBe(false)
   })
+
+  it('consumeOffer replaces the offer in state with the updated one on success', async () => {
+    vi.spyOn(offersService, 'consumeOffer').mockResolvedValue({
+      id: 1,
+      used: true,
+      coupon: 'coupon-a',
+      product: { id: 1 },
+    })
+    const offersStore = useExclusiveOffersStore()
+    offersStore.offers = [
+      { id: 1, used: false, coupon: 'coupon-a', product: { id: 1 } },
+    ]
+
+    await offersStore.consumeOffer('coupon-a')
+
+    expect(offersStore.offers[0].used).toBe(true)
+  })
+
+  it('consumeOffer does not throw and leaves state unchanged when the request fails', async () => {
+    vi.spyOn(offersService, 'consumeOffer').mockRejectedValue(new Error('network error'))
+    const offersStore = useExclusiveOffersStore()
+    const originalOffer = { id: 1, used: false, coupon: 'coupon-a', product: { id: 1 } }
+    offersStore.offers = [originalOffer]
+
+    await expect(offersStore.consumeOffer('coupon-a')).resolves.toBeUndefined()
+
+    expect(offersStore.offers[0]).toEqual(originalOffer)
+  })
 })

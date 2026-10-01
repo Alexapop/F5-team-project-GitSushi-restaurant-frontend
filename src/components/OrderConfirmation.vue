@@ -1,61 +1,85 @@
 <script setup>
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { useCartStore } from '../stores/cart'
-import { useCheckoutStore } from '../stores/checkout'
-import { useLastOrderStore } from '../stores/lastOrder'
-import { createOrder } from '../services/orders.service'
-import { getBackendPaymentMethod, getPaymentStatusLabel } from '../constants/paymentMethods'
+import { ref, computed } from "vue";
+import { useRouter } from "vue-router";
+import { useCartStore } from "../stores/cart";
+import { useCheckoutStore } from "../stores/checkout";
+import { useLastOrderStore } from "../stores/lastOrder";
+import { useExclusiveOffersStore } from "../stores/exclusiveOffers";
+import { createOrder } from "../services/orders.service";
+import {
+  getBackendPaymentMethod,
+  getPaymentStatusLabel,
+} from "../constants/paymentMethods";
 
-const NAVIGATION_DELAY_MS = 2500
+const NAVIGATION_DELAY_MS = 2500;
 
-const router = useRouter()
-const cartStore = useCartStore()
-const checkoutStore = useCheckoutStore()
-const lastOrderStore = useLastOrderStore()
+const router = useRouter();
+const cartStore = useCartStore();
+const checkoutStore = useCheckoutStore();
+const lastOrderStore = useLastOrderStore();
+const offersStore = useExclusiveOffersStore();
 
-const isSubmitting = ref(false)
-const errorMessage = ref(null)
-const paymentStatusMessage = ref(null)
+const isSubmitting = ref(false);
+const errorMessage = ref(null);
+const paymentStatusMessage = ref(null);
 
 const canConfirmOrder = computed(() => {
-  if (cartStore.isEmpty) return false
-  if (checkoutStore.channel === 'sala' && !checkoutStore.paymentMethod) return false
-  return true
-})
+  if (cartStore.isEmpty) return false;
+  if (checkoutStore.channel === "sala" && !checkoutStore.paymentMethod)
+    return false;
+  return true;
+});
 
 const formatCurrency = (value) =>
-  value.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })
+  value.toLocaleString("es-ES", { style: "currency", currency: "EUR" });
+
+// Marca como canjeada cada oferta exclusiva aplicada a un producto del
+// pedido que se acaba de confirmar. Se ejecuta tras crear el pedido con
+// éxito, así que un fallo aquí (ver exclusiveOffers.js) no debe impedir
+// que el flujo de confirmación siga su curso.
+async function consumeAppliedOffers() {
+  const appliedOffers = cartStore.items
+    .map((item) => offersStore.offerForProduct(item.product.id))
+    .filter((offer) => offer !== null);
+
+  await Promise.all(
+    appliedOffers.map((offer) => offersStore.consumeOffer(offer.coupon)),
+  );
+}
 
 async function confirmOrder() {
-  isSubmitting.value = true
-  errorMessage.value = null
+  isSubmitting.value = true;
+  errorMessage.value = null;
 
   try {
     const items = cartStore.items.map((item) => ({
       productId: item.product.id,
       quantity: item.quantity,
-    }))
+    }));
 
     const order = await createOrder({
       items,
       chefNote: checkoutStore.chefNote,
       channel: checkoutStore.channel,
       paymentMethod: getBackendPaymentMethod(checkoutStore.paymentMethod),
-    })
+    });
 
-    lastOrderStore.setOrder(order)
-    paymentStatusMessage.value = getPaymentStatusLabel(order.paymentStatus)
-    cartStore.clearCart()
+    lastOrderStore.setOrder(order);
+    paymentStatusMessage.value = getPaymentStatusLabel(order.paymentStatus);
+
+    await consumeAppliedOffers();
+
+    cartStore.clearCart();
 
     setTimeout(() => {
-      router.push({ name: 'mi-pedido' })
-    }, NAVIGATION_DELAY_MS)
+      router.push({ name: "mi-pedido" });
+    }, NAVIGATION_DELAY_MS);
   } catch (err) {
-    errorMessage.value = 'No se ha podido confirmar el pedido. Inténtalo de nuevo.'
-    console.error('[OrderConfirmation] Error al confirmar el pedido:', err)
+    errorMessage.value =
+      "No se ha podido confirmar el pedido. Inténtalo de nuevo.";
+    console.error("[OrderConfirmation] Error al confirmar el pedido:", err);
   } finally {
-    isSubmitting.value = false
+    isSubmitting.value = false;
   }
 }
 </script>
@@ -69,7 +93,10 @@ async function confirmOrder() {
         <dt>Subtotal</dt>
         <dd>{{ formatCurrency(cartStore.subtotal) }}</dd>
       </div>
-      <div v-if="cartStore.discountAmount > 0" class="order-confirmation__row order-confirmation__row--discount">
+      <div
+        v-if="cartStore.discountAmount > 0"
+        class="order-confirmation__row order-confirmation__row--discount"
+      >
         <dt>Descuento</dt>
         <dd>−{{ cartStore.discountAmount.toFixed(2) }} €</dd>
       </div>
@@ -83,10 +110,17 @@ async function confirmOrder() {
       </div>
     </dl>
 
-    <p v-if="errorMessage" class="order-confirmation__error">{{ errorMessage }}</p>
+    <p v-if="errorMessage" class="order-confirmation__error">
+      {{ errorMessage }}
+    </p>
 
-    <p v-if="paymentStatusMessage" class="order-confirmation__success" role="status">
-      Pedido confirmado — {{ paymentStatusMessage }}. Redirigiendo a tu pedido...
+    <p
+      v-if="paymentStatusMessage"
+      class="order-confirmation__success"
+      role="status"
+    >
+      Pedido confirmado — {{ paymentStatusMessage }}. Redirigiendo a tu
+      pedido...
     </p>
 
     <button
@@ -95,7 +129,7 @@ async function confirmOrder() {
       :disabled="!canConfirmOrder || isSubmitting"
       @click="confirmOrder"
     >
-      {{ isSubmitting ? 'Confirmando...' : 'Confirmar y pagar pedido' }}
+      {{ isSubmitting ? "Confirmando..." : "Confirmar y pagar pedido" }}
     </button>
   </section>
 </template>
