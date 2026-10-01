@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import ExclusiveOffersCard from './ExclusiveOffersCard.vue'
-import * as exclusiveOffersMock from '../mocks/exclusiveOffers.mock'
+import * as offersService from '../services/offers.service'
 
 function mountCard() {
   setActivePinia(createPinia())
@@ -20,7 +20,7 @@ describe('ExclusiveOffersCard', () => {
 
   it('shows a loading message while the offers are being fetched', async () => {
     let resolveFetch
-    vi.spyOn(exclusiveOffersMock, 'getExclusiveOffers').mockReturnValue(
+    vi.spyOn(offersService, 'getExclusiveOffers').mockReturnValue(
       new Promise((resolve) => {
         resolveFetch = resolve
       }),
@@ -31,12 +31,12 @@ describe('ExclusiveOffersCard', () => {
 
     expect(wrapper.text()).toContain('Cargando tus ofertas...')
 
-    resolveFetch({ offers: [] })
+    resolveFetch([])
     await flushPromises()
   })
 
   it('shows an error message when the offers fail to load', async () => {
-    vi.spyOn(exclusiveOffersMock, 'getExclusiveOffers').mockRejectedValue(new Error('network error'))
+    vi.spyOn(offersService, 'getExclusiveOffers').mockRejectedValue(new Error('network error'))
 
     const wrapper = mountCard()
     await flushPromises()
@@ -45,7 +45,7 @@ describe('ExclusiveOffersCard', () => {
   })
 
   it('shows the empty state when there are no active offers', async () => {
-    vi.spyOn(exclusiveOffersMock, 'getExclusiveOffers').mockResolvedValue({ offers: [] })
+    vi.spyOn(offersService, 'getExclusiveOffers').mockResolvedValue([])
 
     const wrapper = mountCard()
     await flushPromises()
@@ -53,31 +53,27 @@ describe('ExclusiveOffersCard', () => {
     expect(wrapper.text()).toContain('Todavía no tienes ofertas exclusivas desbloqueadas.')
   })
 
-  it('renders only the active offers, with product, discount and expiry date', async () => {
-    vi.spyOn(exclusiveOffersMock, 'getExclusiveOffers').mockResolvedValue({
-      offers: [
-        {
-          id: 'offer-1',
-          productId: 1,
-          productName: 'Hello Edamame',
-          originalPrice: 6.5,
-          finalPrice: 5.53,
-          discountRate: 15,
-          expiresAt: null,
-          coupon: null,
-        },
-        {
-          id: 'offer-2',
-          productId: 2,
-          productName: 'Kaisen Init',
-          originalPrice: 12.5,
-          finalPrice: 10,
-          discountRate: 20,
-          expiresAt: '2000-01-01T00:00:00',
-          coupon: 'OLD20',
-        },
-      ],
-    })
+  it('renders only the active offers, with product and discount', async () => {
+    vi.spyOn(offersService, 'getExclusiveOffers').mockResolvedValue([
+      {
+        id: 1,
+        used: false,
+        originalPrice: 6.5,
+        finalPrice: 5.53,
+        discountRate: 15,
+        coupon: null,
+        product: { id: 1, name: 'Hello Edamame' },
+      },
+      {
+        id: 2,
+        used: true,
+        originalPrice: 12.5,
+        finalPrice: 10,
+        discountRate: 20,
+        coupon: 'OLD20',
+        product: { id: 2, name: 'Kaisen Init' },
+      },
+    ])
 
     const wrapper = mountCard()
     await flushPromises()
@@ -89,20 +85,17 @@ describe('ExclusiveOffersCard', () => {
   })
 
   it('does not show a copy button when the offer has no coupon code', async () => {
-    vi.spyOn(exclusiveOffersMock, 'getExclusiveOffers').mockResolvedValue({
-      offers: [
-        {
-          id: 'offer-1',
-          productId: 1,
-          productName: 'Hello Edamame',
-          originalPrice: 6.5,
-          finalPrice: 5.53,
-          discountRate: 15,
-          expiresAt: null,
-          coupon: null,
-        },
-      ],
-    })
+    vi.spyOn(offersService, 'getExclusiveOffers').mockResolvedValue([
+      {
+        id: 1,
+        used: false,
+        originalPrice: 6.5,
+        finalPrice: 5.53,
+        discountRate: 15,
+        coupon: null,
+        product: { id: 1, name: 'Hello Edamame' },
+      },
+    ])
 
     const wrapper = mountCard()
     await flushPromises()
@@ -111,20 +104,17 @@ describe('ExclusiveOffersCard', () => {
   })
 
   it('copies the coupon code to the clipboard and shows a confirmation when clicking the copy button', async () => {
-    vi.spyOn(exclusiveOffersMock, 'getExclusiveOffers').mockResolvedValue({
-      offers: [
-        {
-          id: 'offer-2',
-          productId: 3,
-          productName: 'Kaisen Init',
-          originalPrice: 12.5,
-          finalPrice: 10,
-          discountRate: 20,
-          expiresAt: '2099-12-31T23:59:59',
-          coupon: 'KAISEN20',
-        },
-      ],
-    })
+    vi.spyOn(offersService, 'getExclusiveOffers').mockResolvedValue([
+      {
+        id: 2,
+        used: false,
+        originalPrice: 12.5,
+        finalPrice: 10,
+        discountRate: 20,
+        coupon: 'KAISEN20',
+        product: { id: 3, name: 'Kaisen Init' },
+      },
+    ])
 
     const wrapper = mountCard()
     await flushPromises()
@@ -141,20 +131,17 @@ describe('ExclusiveOffersCard', () => {
 
   it('reverts the copy confirmation back to the coupon code after a few seconds', async () => {
     vi.useFakeTimers()
-    vi.spyOn(exclusiveOffersMock, 'getExclusiveOffers').mockResolvedValue({
-      offers: [
-        {
-          id: 'offer-2',
-          productId: 3,
-          productName: 'Kaisen Init',
-          originalPrice: 12.5,
-          finalPrice: 10,
-          discountRate: 20,
-          expiresAt: null,
-          coupon: 'KAISEN20',
-        },
-      ],
-    })
+    vi.spyOn(offersService, 'getExclusiveOffers').mockResolvedValue([
+      {
+        id: 2,
+        used: false,
+        originalPrice: 12.5,
+        finalPrice: 10,
+        discountRate: 20,
+        coupon: 'KAISEN20',
+        product: { id: 3, name: 'Kaisen Init' },
+      },
+    ])
 
     const wrapper = mountCard()
     await flushPromises()

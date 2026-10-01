@@ -76,7 +76,7 @@ describe('CartSummary', () => {
 
   it('shows the original price struck through, a discount badge, and reduced totals when the product has an active exclusive offer', async () => {
     const { wrapper, cartStore, offersStore } = await mountCartSummary()
-    offersStore.offers = [{ productId: productA.id, finalPrice: 8.5, discountRate: 15, expiresAt: null }]
+    offersStore.offers = [{ used: false, finalPrice: 8.5, discountRate: 15, product: { id: productA.id } }]
     cartStore.addProduct(productA)
     await wrapper.vm.$nextTick()
 

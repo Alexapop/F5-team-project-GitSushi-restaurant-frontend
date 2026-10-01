@@ -1,11 +1,5 @@
 import { defineStore } from "pinia";
-import { getExclusiveOffers } from "../mocks/exclusiveOffers.mock";
-
-// Determina si una oferta ya ha caducado. Sin fecha de caducidad, nunca caduca.
-function isExpired(expiresAt) {
-  if (!expiresAt) return false;
-  return new Date(expiresAt).getTime() < Date.now();
-}
+import { getExclusiveOffers } from "../services/offers.service";
 
 export const useExclusiveOffersStore = defineStore("exclusiveOffers", {
   state: () => ({
@@ -14,13 +8,15 @@ export const useExclusiveOffersStore = defineStore("exclusiveOffers", {
     error: null,
   }),
   getters: {
-    activeOffers: (state) => state.offers.filter((offer) => !isExpired(offer.expiresAt)),
+    // El backend no tiene fecha de caducidad: una oferta deja de estar
+    // activa cuando el cliente ya la ha canjeado (used === true).
+    activeOffers: (state) => state.offers.filter((offer) => !offer.used),
 
-    // Devuelve la oferta activa completa de un producto (con su finalPrice ya
-    // calculado por el backend), o null si no tiene ninguna oferta activa.
+    // Devuelve la oferta activa completa de un producto (con su finalPrice
+    // ya calculado por el backend), o null si no tiene ninguna oferta activa.
     offerForProduct: (state) => (productId) => {
       return (
-        state.offers.find((o) => o.productId === productId && !isExpired(o.expiresAt)) ?? null
+        state.offers.find((o) => o.product.id === productId && !o.used) ?? null
       );
     },
   },
@@ -29,8 +25,7 @@ export const useExclusiveOffersStore = defineStore("exclusiveOffers", {
       this.isLoading = true;
       this.error = null;
       try {
-        const result = await getExclusiveOffers();
-        this.offers = result.offers;
+        this.offers = await getExclusiveOffers();
       } catch (err) {
         this.error = "No se han podido cargar tus ofertas exclusivas. Inténtalo de nuevo más tarde.";
         console.error("[exclusiveOffers] Error al obtener las ofertas:", err);

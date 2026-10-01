@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useExclusiveOffersStore } from './exclusiveOffers'
-import * as exclusiveOffersMock from '../mocks/exclusiveOffers.mock'
+import * as offersService from '../services/offers.service'
 
 describe('useExclusiveOffersStore', () => {
   beforeEach(() => {
@@ -17,20 +17,20 @@ describe('useExclusiveOffersStore', () => {
     expect(offersStore.error).toBeNull()
   })
 
-  it('activeOffers excludes expired offers and keeps offers without expiry', () => {
+  it('activeOffers excludes offers that have already been used', () => {
     const offersStore = useExclusiveOffersStore()
     offersStore.offers = [
-      { id: 'a', productId: 1, discountPercentage: 10, expiresAt: null },
-      { id: 'b', productId: 2, discountPercentage: 20, expiresAt: '2099-01-01T00:00:00' },
-      { id: 'c', productId: 3, discountPercentage: 30, expiresAt: '2000-01-01T00:00:00' },
+      { id: 1, used: false, product: { id: 1 } },
+      { id: 2, used: false, product: { id: 2 } },
+      { id: 3, used: true, product: { id: 3 } },
     ]
 
-    expect(offersStore.activeOffers.map((offer) => offer.id)).toEqual(['a', 'b'])
+    expect(offersStore.activeOffers.map((offer) => offer.id)).toEqual([1, 2])
   })
 
-    it('offerForProduct returns the active offer for that product', () => {
+  it('offerForProduct returns the active offer for that product', () => {
     const offersStore = useExclusiveOffersStore()
-    const offer = { id: 'a', productId: 1, finalPrice: 8.5, discountRate: 15, expiresAt: null }
+    const offer = { id: 1, used: false, finalPrice: 8.5, discountRate: 15, product: { id: 1 } }
     offersStore.offers = [offer]
 
     expect(offersStore.offerForProduct(1)).toEqual(offer)
@@ -38,22 +38,24 @@ describe('useExclusiveOffersStore', () => {
 
   it('offerForProduct returns null when there is no offer for that product', () => {
     const offersStore = useExclusiveOffersStore()
-    offersStore.offers = [{ id: 'a', productId: 1, finalPrice: 8.5, discountRate: 15, expiresAt: null }]
+    offersStore.offers = [
+      { id: 1, used: false, finalPrice: 8.5, discountRate: 15, product: { id: 1 } },
+    ]
 
     expect(offersStore.offerForProduct(999)).toBeNull()
   })
 
-  it('offerForProduct returns null when the only offer for that product has expired', () => {
+  it('offerForProduct returns null when the only offer for that product has already been used', () => {
     const offersStore = useExclusiveOffersStore()
     offersStore.offers = [
-      { id: 'a', productId: 1, finalPrice: 8.5, discountRate: 15, expiresAt: '2000-01-01T00:00:00' },
+      { id: 1, used: true, finalPrice: 8.5, discountRate: 15, product: { id: 1 } },
     ]
 
     expect(offersStore.offerForProduct(1)).toBeNull()
   })
 
   it('sets isLoading to true while fetching and false when finished', async () => {
-    vi.spyOn(exclusiveOffersMock, 'getExclusiveOffers').mockResolvedValue({ offers: [] })
+    vi.spyOn(offersService, 'getExclusiveOffers').mockResolvedValue([])
     const offersStore = useExclusiveOffersStore()
 
     const promise = offersStore.fetchOffers()
@@ -64,8 +66,8 @@ describe('useExclusiveOffersStore', () => {
   })
 
   it('stores the fetched offers on success', async () => {
-    const fetchedOffers = [{ id: 'a', productId: 1, discountPercentage: 15, expiresAt: null }]
-    vi.spyOn(exclusiveOffersMock, 'getExclusiveOffers').mockResolvedValue({ offers: fetchedOffers })
+    const fetchedOffers = [{ id: 1, used: false, discountRate: 15, product: { id: 1 } }]
+    vi.spyOn(offersService, 'getExclusiveOffers').mockResolvedValue(fetchedOffers)
     const offersStore = useExclusiveOffersStore()
 
     await offersStore.fetchOffers()
@@ -75,7 +77,7 @@ describe('useExclusiveOffersStore', () => {
   })
 
   it('stores an error message when the fetch fails', async () => {
-    vi.spyOn(exclusiveOffersMock, 'getExclusiveOffers').mockRejectedValue(new Error('network error'))
+    vi.spyOn(offersService, 'getExclusiveOffers').mockRejectedValue(new Error('network error'))
     const offersStore = useExclusiveOffersStore()
 
     await offersStore.fetchOffers()
