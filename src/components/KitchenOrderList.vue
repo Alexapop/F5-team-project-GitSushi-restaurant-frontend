@@ -94,9 +94,10 @@ const filteredOrders = computed(() => {
       No hay comandas activas.
     </p>
 
+    <!-- Móvil: 1 columna · Tablet (md): 2 columnas · Escritorio (xl): 4 columnas -->
     <div
       v-else
-      class="grid gap-4"
+      class="grid gap-4 md:grid-cols-2 xl:grid-cols-4"
     >
   <KitchenOrderCard
   v-for="order in filteredOrders"
