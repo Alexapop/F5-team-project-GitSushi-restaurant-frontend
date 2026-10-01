@@ -18,6 +18,11 @@ const {
   validateForm,
 } = useProfileForm(() => authStore.user)
 
+function handleDictation(field, transcript) {
+  form[field] = transcript
+  validateField(field)
+}
+
 async function handleSubmit() {
   if (authStore.isFetchingUser || !authStore.user) return
 
@@ -80,6 +85,7 @@ async function handleSubmit() {
           :field="field"
           :error="touched[field.name] ? errors[field.name] ?? '' : ''"
           @blur="validateField(field.name)"
+          @transcript="handleDictation(field.name, $event)"
         />
       </div>
 

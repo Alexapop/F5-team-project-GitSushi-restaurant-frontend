@@ -41,12 +41,18 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  // Olvida el usuario en el front sin llamar al backend
+  // (p. ej. cuando la sesión ha caducado y el refresh falla).
+  function clearSession() {
+    user.value = null
+    role.value = null
+  }
+
   async function logout() {
     try {
       await authService.logout()
     } finally {
-      user.value = null
-      role.value = null
+      clearSession()
     }
   }
 
@@ -58,6 +64,7 @@ export const useAuthStore = defineStore('auth', () => {
     isAuthenticated,
     login,
     fetchCurrentUser,
+    clearSession,
     logout,
   }
 })

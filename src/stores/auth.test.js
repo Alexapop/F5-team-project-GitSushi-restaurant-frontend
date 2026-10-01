@@ -100,4 +100,25 @@ describe('auth store', () => {
     expect(authStore.role).toBeNull()
     expect(authStore.isAuthenticated).toBe(false)
   })
+
+  it('clearSession olvida el usuario sin llamar al backend', async () => {
+    authService.login.mockResolvedValue({
+      email: 'user@test.com',
+      roles: ['ROLE_CUSTOMER'],
+    })
+
+    const authStore = useAuthStore()
+
+    await authStore.login({
+      email: 'user@test.com',
+      password: '123456',
+    })
+
+    authStore.clearSession()
+
+    expect(authService.logout).not.toHaveBeenCalled()
+    expect(authStore.user).toBeNull()
+    expect(authStore.role).toBeNull()
+    expect(authStore.isAuthenticated).toBe(false)
+  })
 })

@@ -1,4 +1,6 @@
 <script setup>
+import VoiceDictationButton from '../VoiceDictationButton.vue'
+
 defineProps({
   field: {
     type: Object,
@@ -14,7 +16,11 @@ defineProps({
   },
 })
 
-const emit = defineEmits(['update:modelValue', 'blur'])
+const emit = defineEmits([
+  'update:modelValue',
+  'blur',
+  'transcript',
+])
 </script>
 
 <template>
@@ -24,18 +30,28 @@ const emit = defineEmits(['update:modelValue', 'blur'])
   >
     <label :for="field.name">{{ field.label }}</label>
 
-    <input
-      :id="field.name"
-      :name="field.name"
-      :value="modelValue"
-      :type="field.type"
-      :autocomplete="field.autocomplete"
-      required
-      :aria-invalid="Boolean(error)"
-      :aria-describedby="error ? `${field.name}-error` : undefined"
-      @input="emit('update:modelValue', $event.target.value)"
-      @blur="emit('blur')"
-    />
+    <div
+      :class="{ 'profile-field__voice-control': field.voiceInput }"
+    >
+      <input
+        :id="field.name"
+        :name="field.name"
+        :value="modelValue"
+        :type="field.type"
+        :autocomplete="field.autocomplete"
+        required
+        :aria-invalid="Boolean(error)"
+        :aria-describedby="error ? `${field.name}-error` : undefined"
+        @input="emit('update:modelValue', $event.target.value)"
+        @blur="emit('blur')"
+      />
+
+      <VoiceDictationButton
+        v-if="field.voiceInput"
+        :field-label="field.label"
+        @transcript="emit('transcript', $event)"
+      />
+    </div>
 
     <p
       v-if="error"
@@ -62,6 +78,10 @@ const emit = defineEmits(['update:modelValue', 'blur'])
   @apply w-full rounded-lg border border-outline
     bg-surface-container px-4 py-3 outline-none
     transition focus:border-primary;
+}
+
+.profile-field__voice-control {
+  @apply grid grid-cols-[1fr_auto] items-center gap-x-2 gap-y-1;
 }
 
 .profile-field input[aria-invalid="true"] {

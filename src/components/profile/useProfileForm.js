@@ -38,13 +38,14 @@ const fields = [
     autocomplete: 'postal-code',
     requiredMessage: 'El código postal es obligatorio.',
   },
-  {
-    name: 'city',
-    label: 'Ciudad',
-    type: 'text',
-    autocomplete: 'address-level2',
-    requiredMessage: 'La ciudad es obligatoria.',
-  },
+{
+  name: 'city',
+  label: 'Ciudad',
+  type: 'text',
+  autocomplete: 'address-level2',
+  requiredMessage: 'La ciudad es obligatoria.',
+  voiceInput: true,
+},
 ]
 
 export function useProfileForm(getUser) {
