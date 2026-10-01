@@ -9,14 +9,6 @@ onMounted(() => {
   offersStore.fetchOffers()
 })
 
-function formatDate(isoDate) {
-  return new Date(isoDate).toLocaleDateString('es-ES', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  })
-}
-
 async function handleCopyCoupon(offer) {
   try {
     await navigator.clipboard.writeText(offer.coupon)
@@ -49,11 +41,8 @@ async function handleCopyCoupon(offer) {
       <ul v-else class="exclusive-offers__list">
         <li v-for="offer in offersStore.activeOffers" :key="offer.id" class="exclusive-offers__card">
           <div class="exclusive-offers__info">
-            <p class="exclusive-offers__product">{{ offer.productName }}</p>
+            <p class="exclusive-offers__product">{{ offer.product.name }}</p>
             <p class="exclusive-offers__discount">{{ offer.discountRate }}% de descuento</p>
-            <p v-if="offer.expiresAt" class="exclusive-offers__expiry">
-              Válida hasta el {{ formatDate(offer.expiresAt) }}
-            </p>
           </div>
 
           <button
@@ -103,10 +92,6 @@ async function handleCopyCoupon(offer) {
 
 .exclusive-offers__discount {
   @apply text-sm font-semibold text-primary;
-}
-
-.exclusive-offers__expiry {
-  @apply text-sm text-on-surface-variant;
 }
 
 .exclusive-offers__copy-btn {
