@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useCheckoutStore } from '../stores/checkout'
-import { DINE_IN_PAYMENT_METHODS } from '../constants/paymentMethods'
+import { DINE_IN_PAYMENT_METHODS, HOME_DELIVERY_PAYMENT_METHODS } from '../constants/paymentMethods'
 
 const checkoutStore = useCheckoutStore()
 
