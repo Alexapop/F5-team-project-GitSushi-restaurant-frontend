@@ -58,8 +58,12 @@ export function getBackendPaymentMethod(value) {
 
 // Traduce el paymentStatus real que devuelve el backend al confirmar un
 // pedido (p. ej. 'PENDING_CASH') al texto en español que se muestra en el
-// resumen del pedido. Devuelve null si no lo reconoce.
+// resumen del pedido. Devuelve null si no lo reconoce, o si el backend
+// todavía no envía un paymentStatus real para ese método (los dos de
+// "a domicilio" tienen backendPaymentStatus: null a propósito).
 export function getPaymentStatusLabel(paymentStatus) {
+  if (!paymentStatus) return null
+
   const method = ALL_PAYMENT_METHODS.find(
     (method) => method.backendPaymentStatus === paymentStatus
   )
