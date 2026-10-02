@@ -7,6 +7,7 @@ import { useCartStore } from "../stores/cart";
 import { useCheckoutStore } from "../stores/checkout";
 import { useExclusiveOffersStore } from "../stores/exclusiveOffers";
 import * as ordersService from "../services/orders.service";
+import * as paymentsService from "../services/payments.service";
 import { useLastOrderStore } from "../stores/lastOrder";
 
 const routes = [
@@ -217,5 +218,77 @@ describe("OrderConfirmation", () => {
     await flushPromises();
 
     expect(offersStore.consumeOffer).not.toHaveBeenCalled();
+  });
+
+  describe("home delivery with online card (Stripe)", () => {
+    let originalLocation;
+
+    beforeEach(() => {
+      // jsdom no soporta de verdad cambiar window.location.href (lanza un
+      // error de "navegación no implementada"), así que se sustituye por un
+      // objeto propio solo para estos tests, y se restaura después.
+      originalLocation = window.location;
+      delete window.location;
+      window.location = { href: "" };
+    });
+
+    afterEach(() => {
+      window.location = originalLocation;
+    });
+
+    it("creates a Stripe checkout session and redirects to it, without emptying the cart yet", async () => {
+      vi.spyOn(ordersService, "createOrder").mockResolvedValue({
+        id: 42,
+        paymentStatus: "PENDING_ONLINE_PAYMENT",
+      });
+      vi.spyOn(paymentsService, "createCheckoutSession").mockResolvedValue({
+        checkoutUrl: "https://stripe.test/pay/sess_42",
+      });
+
+      const { wrapper, cartStore, checkoutStore, router } =
+        await mountOrderConfirmation();
+      cartStore.addProduct({ id: 1, name: "Salmon Roll", price: 10 });
+      checkoutStore.setChannel("domicilio");
+      checkoutStore.setPaymentMethod("onlineCard");
+      await flushPromises();
+
+      await wrapper.find(".order-confirmation__button").trigger("click");
+      await flushPromises();
+
+      expect(paymentsService.createCheckoutSession).toHaveBeenCalledWith({
+        orderId: 42,
+        email: undefined,
+      });
+      expect(window.location.href).toBe("https://stripe.test/pay/sess_42");
+      // El pago todavía no está confirmado: la cesta se mantiene intacta y
+      // no se navega a /mi-pedido todavía.
+      expect(cartStore.isEmpty).toBe(false);
+      expect(router.currentRoute.value.name).toBe("cesta");
+    });
+
+    it("does not redirect to Stripe for home delivery with cash on delivery", async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+      vi.spyOn(ordersService, "createOrder").mockResolvedValue({
+        id: 43,
+        paymentStatus: "PENDING_CASH_ON_DELIVERY",
+      });
+      const createCheckoutSessionSpy = vi.spyOn(
+        paymentsService,
+        "createCheckoutSession",
+      );
+
+      const { wrapper, cartStore, checkoutStore } =
+        await mountOrderConfirmation();
+      cartStore.addProduct({ id: 1, name: "Salmon Roll", price: 10 });
+      checkoutStore.setChannel("domicilio");
+      checkoutStore.setPaymentMethod("cashOnDelivery");
+      await flushPromises();
+
+      await wrapper.find(".order-confirmation__button").trigger("click");
+      await flushPromises();
+
+      expect(createCheckoutSessionSpy).not.toHaveBeenCalled();
+      expect(cartStore.isEmpty).toBe(true);
+    });
   });
 })
