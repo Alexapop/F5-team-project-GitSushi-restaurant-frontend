@@ -19,7 +19,7 @@ describe('invoices.service', () => {
   it('pide la primera página de 5 facturas por defecto', async () => {
     await getPaidInvoices()
 
-    expect(api.get).toHaveBeenCalledWith('/api/v1/invoices', {
+    expect(api.get).toHaveBeenCalledWith('/api/v1/facturation', {
       params: { page: 0, size: INVOICES_PAGE_SIZE },
     })
   })
