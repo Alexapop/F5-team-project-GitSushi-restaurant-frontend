@@ -1,6 +1,7 @@
 <script setup>
 import { ADMIN_SECTIONS } from '../../constants/adminSections'
 import AdminSectionCard from '../../components/AdminSectionCard.vue'
+import CloudAutomationStatusCard from '../../components/CloudAutomationStatusCard.vue'
 
 // Responsabilidad: inicio del panel de administración con una tarjeta por sección.
 </script>
@@ -9,6 +10,8 @@ import AdminSectionCard from '../../components/AdminSectionCard.vue'
   <section class="admin-home" aria-labelledby="admin-home-title">
     <h1 id="admin-home-title" class="admin-home__title">Panel de administración</h1>
     <p class="admin-home__subtitle">Elige qué quieres gestionar.</p>
+
+    <CloudAutomationStatusCard class="admin-home__status" />
 
     <ul class="admin-home__grid">
       <li v-for="section in ADMIN_SECTIONS" :key="section.key" class="admin-home__item">
@@ -27,6 +30,10 @@ import AdminSectionCard from '../../components/AdminSectionCard.vue'
 
 .admin-home__subtitle {
   @apply mb-6 text-on-surface-variant;
+}
+
+.admin-home__status {
+  @apply mb-6;
 }
 
 .admin-home__grid {
