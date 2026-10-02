@@ -82,18 +82,45 @@ describe('AdminUsersPanel', () => {
     expect(wrapper.find('.pagination-control').exists()).toBe(false)
   })
 
-  it('desactiva un usuario y muestra el nuevo estado', async () => {
+  it('pide confirmación antes de desactivar y no cambia nada si se cancela', async () => {
+    const wrapper = await mountPanel()
+
+    await wrapper.findAll('tbody tr')[1].find('button').trigger('click')
+    expect(wrapper.find('[role="dialog"]').text()).toContain(
+      '¿Estás seguro de desactivar a Laura Gómez?'
+    )
+
+    await wrapper.find('.confirm-dialog__button').trigger('click')
+
+    expect(wrapper.find('[role="dialog"]').exists()).toBe(false)
+    expect(updateUser).not.toHaveBeenCalled()
+  })
+
+  it('desactiva al confirmar y muestra el nuevo estado', async () => {
     updateUser.mockResolvedValue({ ...CUSTOMER, active: false })
     const wrapper = await mountPanel()
 
     await wrapper.findAll('tbody tr')[1].find('button').trigger('click')
+    await wrapper.find('.confirm-dialog__button--danger').trigger('click')
     await flushPromises()
 
     expect(updateUser).toHaveBeenCalledWith('customer-id', { active: false })
     expect(wrapper.findAll('tbody tr')[1].find('.users-table__badge').text()).toBe('Inactivo')
   })
 
-    it('abre la ventana de edición con los datos del usuario', async () => {
+  it('activa sin pedir confirmación', async () => {
+    getUsers.mockResolvedValue({ items: [ADMIN, { ...CUSTOMER, active: false }], totalPages: 1 })
+    updateUser.mockResolvedValue({ ...CUSTOMER, active: true })
+    const wrapper = await mountPanel()
+
+    await wrapper.findAll('tbody tr')[1].find('button').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('[role="dialog"]').exists()).toBe(false)
+    expect(updateUser).toHaveBeenCalledWith('customer-id', { active: true })
+  })
+
+  it('abre la ventana de edición con los datos del usuario', async () => {
     const wrapper = await mountPanel()
 
     await wrapper.find('[aria-label="Editar a Laura Gómez"]').trigger('click')
@@ -152,7 +179,9 @@ describe('AdminUsersPanel', () => {
     const wrapper = await mountPanel()
 
     await wrapper.find('[aria-label="Eliminar a Laura Gómez"]').trigger('click')
-    expect(wrapper.find('[role="dialog"]').text()).toContain('¿Eliminar a Laura Gómez?')
+    expect(wrapper.find('[role="dialog"]').text()).toContain(
+      '¿Estás seguro de eliminar a Laura Gómez?'
+    )
 
     await wrapper.find('.confirm-dialog__button').trigger('click')
 
