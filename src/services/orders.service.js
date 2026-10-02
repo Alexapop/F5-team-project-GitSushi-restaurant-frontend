@@ -33,3 +33,10 @@ export async function createOrder({ items, chefNote, channel, paymentMethod, add
   })
   return response.data
 }
+
+// Pedidos filtrados por estado (p. ej. 'ONTHEWAY' para el Dashboard de
+// Repartidores). Endpoint genérico, no requiere ningún repartidor asignado.
+export async function getOrdersByStatus(status) {
+  const response = await api.get(ORDERS_ENDPOINT, { params: { status } })
+  return response.data
+}
