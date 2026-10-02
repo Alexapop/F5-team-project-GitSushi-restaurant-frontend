@@ -35,4 +35,12 @@ export const ADMIN_SECTIONS = Object.freeze([
     routeName: 'admin-resumen-ventas',
     available: true,
   },
+  {
+    key: 'users',
+    title: 'Gestión de usuarios',
+    description: 'Roles, activar y eliminar cuentas',
+    icon: 'group',
+    routeName: 'admin-usuarios',
+    available: true,
+  },
 ])
