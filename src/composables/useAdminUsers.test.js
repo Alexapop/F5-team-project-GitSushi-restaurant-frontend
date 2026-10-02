@@ -105,6 +105,25 @@ describe('useAdminUsers', () => {
     expect(state.pendingUserId.value).toBeNull()
   })
 
+    it('guarda los datos editados y sustituye al usuario en la lista', async () => {
+    const state = await loadedState()
+    const changes = { firstName: 'Lucía' }
+    updateUser.mockResolvedValue(buildUser('a', changes))
+
+    await state.saveUserData('a', changes)
+
+    expect(updateUser).toHaveBeenCalledWith('a', changes)
+    expect(state.users.value[0].firstName).toBe('Lucía')
+  })
+
+  it('deja pasar el error al guardar los datos para que lo muestre la ventana', async () => {
+    const state = await loadedState()
+    updateUser.mockRejectedValue(new Error('500'))
+
+    await expect(state.saveUserData('a', { firstName: 'Lucía' })).rejects.toThrow('500')
+    expect(state.users.value[0].firstName).toBe('Ana')
+  })
+
   it('elimina un usuario y recarga la página actual', async () => {
     const state = await loadedState()
     deleteUser.mockResolvedValue()

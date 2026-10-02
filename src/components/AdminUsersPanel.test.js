@@ -25,6 +25,9 @@ const CUSTOMER = {
   firstName: 'Laura',
   lastName: 'Gómez',
   email: 'customer@gitsushi.com',
+  address: 'Calle Mayor 5',
+  postalCode: '33401',
+  city: 'Avilés',
   roles: ['ROLE_CUSTOMER'],
   active: true,
 }
@@ -88,6 +91,61 @@ describe('AdminUsersPanel', () => {
 
     expect(updateUser).toHaveBeenCalledWith('customer-id', { active: false })
     expect(wrapper.findAll('tbody tr')[1].find('.users-table__badge').text()).toBe('Inactivo')
+  })
+
+    it('abre la ventana de edición con los datos del usuario', async () => {
+    const wrapper = await mountPanel()
+
+    await wrapper.find('[aria-label="Editar a Laura Gómez"]').trigger('click')
+
+    expect(wrapper.find('[aria-label="Editar usuario"]').exists()).toBe(true)
+    expect(wrapper.find('#user-first-name').element.value).toBe('Laura')
+  })
+
+  it('guarda los cambios, cierra la ventana y actualiza la fila', async () => {
+    updateUser.mockResolvedValue({ ...CUSTOMER, firstName: 'Lucía' })
+    const wrapper = await mountPanel()
+
+    await wrapper.find('[aria-label="Editar a Laura Gómez"]').trigger('click')
+    await wrapper.find('#user-first-name').setValue('Lucía')
+    await wrapper.find('.user-form__form').trigger('submit')
+    await flushPromises()
+
+    expect(updateUser).toHaveBeenCalledWith('customer-id', {
+      firstName: 'Lucía',
+      lastName: 'Gómez',
+      email: 'customer@gitsushi.com',
+      address: 'Calle Mayor 5',
+      postalCode: '33401',
+      city: 'Avilés',
+    })
+    expect(wrapper.find('[aria-label="Editar usuario"]').exists()).toBe(false)
+    expect(wrapper.findAll('tbody tr')[1].text()).toContain('Lucía Gómez')
+  })
+
+  it('mantiene la ventana abierta y muestra el error si no se puede guardar', async () => {
+    updateUser.mockRejectedValue(new Error('500'))
+    const wrapper = await mountPanel()
+
+    await wrapper.find('[aria-label="Editar a Laura Gómez"]').trigger('click')
+    await wrapper.find('#user-first-name').setValue('Lucía')
+    await wrapper.find('.user-form__form').trigger('submit')
+    await flushPromises()
+
+    expect(wrapper.find('[aria-label="Editar usuario"]').exists()).toBe(true)
+    expect(wrapper.find('.user-form [role="alert"]').text()).toBe(
+      'No se han podido guardar los datos. Revisa que el email no lo use otra cuenta.'
+    )
+  })
+
+  it('cierra la ventana de edición al cancelar sin guardar', async () => {
+    const wrapper = await mountPanel()
+
+    await wrapper.find('[aria-label="Editar a Laura Gómez"]').trigger('click')
+    await wrapper.find('[aria-label="Cerrar"]').trigger('click')
+
+    expect(wrapper.find('[aria-label="Editar usuario"]').exists()).toBe(false)
+    expect(updateUser).not.toHaveBeenCalled()
   })
 
   it('pide confirmación antes de eliminar y no borra si se cancela', async () => {

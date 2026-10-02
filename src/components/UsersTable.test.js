@@ -80,6 +80,14 @@ describe('UsersTable', () => {
     expect(wrapper.emitted('toggle-active')[0]).toEqual([COOK])
   })
 
+    it('avisa al pedir editar un usuario', async () => {
+    const wrapper = mountTable()
+
+    await getRow(wrapper, 1).find('[aria-label="Editar a Kenji Sato"]').trigger('click')
+
+    expect(wrapper.emitted('edit')[0]).toEqual([COOK])
+  })
+
   it('avisa al pedir eliminar un usuario', async () => {
     const wrapper = mountTable()
 
