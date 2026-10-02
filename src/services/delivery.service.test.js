@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import api from './api'
-import { getDeliveryMetrics } from './delivery.service'
+import { getDeliveryMetrics, markOrderAsDelivered } from './delivery.service'
 
 vi.mock('./api', () => ({
   default: {
     get: vi.fn(),
+    patch: vi.fn(),
   },
 }))
 
@@ -47,5 +48,24 @@ describe('delivery.service', () => {
     api.get.mockRejectedValue(error)
 
     await expect(getDeliveryMetrics()).rejects.toBe(error)
+  })
+
+  it('marks an order as delivered with the cash collected flag', async () => {
+    const updatedOrder = { id: 12, status: 'DELIVERED' }
+    api.patch.mockResolvedValue({ data: updatedOrder })
+
+    const result = await markOrderAsDelivered(12, { cashCollected: true })
+
+    expect(api.patch).toHaveBeenCalledWith('/api/v1/delivery/orders/12/status', {
+      cashCollected: true,
+    })
+    expect(result).toEqual(updatedOrder)
+  })
+
+  it('propagates the error when marking as delivered fails', async () => {
+    const error = new Error('Cannot mark as delivered')
+    api.patch.mockRejectedValue(error)
+
+    await expect(markOrderAsDelivered(12, { cashCollected: false })).rejects.toBe(error)
   })
 })
