@@ -1,12 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createOrder } from "./orders.service";
+import { createOrder, getOrdersByStatus } from "./orders.service";
 import api from "./api";
 
-vi.mock("./api", () => ({
+vi.mock('./api', () => ({
   default: {
     post: vi.fn(),
+    get: vi.fn(),
   },
-}));
+}))
 
 describe("orders.service", () => {
   beforeEach(() => {
@@ -97,4 +98,14 @@ describe("orders.service", () => {
       }),
     ).rejects.toThrow("network error");
   });
+
+  it('requests orders filtered by status', async () => {
+    const orders = [{ id: 1, status: 'ONTHEWAY' }]
+    api.get.mockResolvedValue({ data: orders })
+
+    const result = await getOrdersByStatus('ONTHEWAY')
+
+    expect(api.get).toHaveBeenCalledWith('/api/v1/orders', { params: { status: 'ONTHEWAY' } })
+    expect(result).toEqual(orders)
+  })
 });
