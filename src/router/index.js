@@ -25,8 +25,14 @@ const routes = [
     meta: { roles: [GUEST, CUSTOMER] },
   },
   {
-    path: "/pago/confirmar",
-    name: "payment-return",
+    path: "/success",
+    name: "payment-success",
+    component: () => import("../views/PaymentReturnView.vue"),
+    meta: { roles: [GUEST, CUSTOMER] },
+  },
+  {
+    path: "/cancel",
+    name: "payment-cancel",
     component: () => import("../views/PaymentReturnView.vue"),
     meta: { roles: [GUEST, CUSTOMER] },
   },
