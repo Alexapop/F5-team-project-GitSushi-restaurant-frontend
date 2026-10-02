@@ -1,15 +1,10 @@
 <script setup>
-import DeliveryMetrics from '../components/DeliveryMetrics.vue'
-import { useDeliveryMetrics } from '../composables/useDeliveryMetrics'
+import DeliveryMetrics from "../components/DeliveryMetrics.vue";
+import OnTheWayOrdersList from "../components/OnTheWayOrdersList.vue";
+import { useDeliveryMetrics } from "../composables/useDeliveryMetrics";
 
-const {
-  metrics,
-  isLoading,
-  isRefreshing,
-  error,
-  isEmpty,
-  refresh,
-} = useDeliveryMetrics()
+const { metrics, isLoading, isRefreshing, error, isEmpty, refresh } =
+  useDeliveryMetrics();
 </script>
 
 <template>
@@ -17,14 +12,12 @@ const {
     <header>
       <h1 class="delivery-view__title">Resumen de reparto</h1>
       <p class="delivery-view__description">
-        Vista general de los pedidos del restaurante.
-        Actualización automática cada 10 segundos.
+        Vista general de los pedidos del restaurante. Actualización automática
+        cada 10 segundos.
       </p>
     </header>
 
-    <p v-if="isLoading" role="status">
-      Cargando datos de reparto…
-    </p>
+    <p v-if="isLoading" role="status">Cargando datos de reparto…</p>
 
     <template v-else>
       <div v-if="error" class="delivery-view__error">
@@ -40,15 +33,16 @@ const {
         </button>
       </div>
 
-      <DeliveryMetrics
-        v-if="metrics"
-        :metrics="metrics"
-      />
+      <DeliveryMetrics v-if="metrics" :metrics="metrics" />
 
       <p v-if="isEmpty" role="status">
         No hay pedidos listos, en tránsito ni entregados hoy.
       </p>
     </template>
+    <!-- Lista provisional: todavía no existe la asignación real de
+         repartidor ni la acción de marcar "en tránsito",
+         así que se muestran todos los pedidos en ese estado. -->
+    <OnTheWayOrdersList />
   </main>
 </template>
 
