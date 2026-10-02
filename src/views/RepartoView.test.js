@@ -3,9 +3,15 @@ import { flushPromises, mount } from '@vue/test-utils'
 import RepartoView from './RepartoView.vue'
 import DeliveryMetrics from '../components/DeliveryMetrics.vue'
 import { getDeliveryMetrics } from '../services/delivery.service'
+import { getOrdersByStatus } from '../services/orders.service'
+
+vi.mock('../services/orders.service', () => ({
+  getOrdersByStatus: vi.fn(),
+}))
 
 vi.mock('../services/delivery.service', () => ({
   getDeliveryMetrics: vi.fn(),
+  markOrderAsDelivered: vi.fn(),
 }))
 
 const metrics = {
@@ -18,6 +24,7 @@ const metrics = {
 describe('RepartoView', () => {
   beforeEach(() => {
     vi.resetAllMocks()
+    getOrdersByStatus.mockResolvedValue([])
   })
 
   it('muestra carga hasta recibir las métricas', async () => {
