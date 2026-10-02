@@ -4,9 +4,9 @@
 // Los métodos de "a domicilio" (tarjeta online, efectivo a la entrega) son
 // responsabilidad de otra parte y no se incluyen aquí.
 // `backendValue` es el valor real del enum PaymentMethod que espera el
-// backend (dev.team1.enums.PaymentMethod).
+// backend.
 // `backendPaymentStatus` es el valor real del enum PaymentStatus que
-// devuelve el backend tras confirmar el pedido (dev.team1.enums.PaymentStatus).
+// devuelve el backend tras confirmar el pedido.
 export const DINE_IN_PAYMENT_METHODS = Object.freeze([
   {
     value: 'cashier',
@@ -25,22 +25,23 @@ export const DINE_IN_PAYMENT_METHODS = Object.freeze([
 ])
 
 // Métodos de pago válidos cuando el canal del pedido es "a domicilio".
-// `backendPaymentStatus` queda en null: el backend todavía no devuelve un
-// paymentStatus real para estos dos métodos (confirmado leyendo
-// OrderService.java) — en cuanto lo publique, se rellena aquí igual que ya
-// está hecho arriba para "en sala".
+// `backendPaymentStatus` ya tiene los valores reales del enum PaymentStatus
+// para domicilio.
+// `onlineCard` en la práctica no llega a mostrar este estado en pantalla,
+// porque OrderConfirmation.vue redirige a Stripe antes de mostrar el
+// mensaje de estado de pago — se deja aquí por completitud del contrato.
 export const HOME_DELIVERY_PAYMENT_METHODS = Object.freeze([
   {
     value: 'onlineCard',
     backendValue: 'ONLINE_CARD',
-    backendPaymentStatus: null,
+    backendPaymentStatus: 'PENDING_ONLINE_PAYMENT',
     label: 'Tarjeta online',
-    pendingStatusLabel: 'pagado',
+    pendingStatusLabel: 'pendiente de pago online',
   },
   {
     value: 'cashOnDelivery',
     backendValue: 'CASH_ON_DELIVERY',
-    backendPaymentStatus: null,
+    backendPaymentStatus: 'PENDING_CASH_ON_DELIVERY',
     label: 'Efectivo a la entrega',
     pendingStatusLabel: 'pendiente de cobro por el repartidor',
   },
@@ -58,9 +59,7 @@ export function getBackendPaymentMethod(value) {
 
 // Traduce el paymentStatus real que devuelve el backend al confirmar un
 // pedido (p. ej. 'PENDING_CASH') al texto en español que se muestra en el
-// resumen del pedido. Devuelve null si no lo reconoce, o si el backend
-// todavía no envía un paymentStatus real para ese método (los dos de
-// "a domicilio" tienen backendPaymentStatus: null a propósito).
+// resumen del pedido. Devuelve null si no lo reconoce.
 export function getPaymentStatusLabel(paymentStatus) {
   if (!paymentStatus) return null
 
