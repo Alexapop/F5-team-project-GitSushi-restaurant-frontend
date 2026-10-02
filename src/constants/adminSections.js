@@ -24,8 +24,8 @@ export const ADMIN_SECTIONS = Object.freeze([
     title: 'KPI de ventas',
     description: 'Hoy, mes, trimestre y año',
     icon: 'bar_chart',
-    routeName: null,
-    available: false,
+    routeName: 'admin-kpi',
+    available: true,
   },
   {
     key: 'sales-report',
