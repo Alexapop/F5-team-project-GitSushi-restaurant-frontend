@@ -9,8 +9,8 @@ import UserFormModal from './UserFormModal.vue'
 import UsersTable from './UsersTable.vue'
 
 // Responsabilidad: coordinar la sección "Gestión de usuarios". Une la tabla,
-// la paginación, la ventana de edición y la confirmación de borrado con el
-// estado de useAdminUsers.
+// la paginación, la ventana de edición y las confirmaciones (desactivar y
+// eliminar) con el estado de useAdminUsers.
 
 const EDIT_ERROR_MESSAGE =
   'No se han podido guardar los datos. Revisa que el email no lo use otra cuenta.'
@@ -62,24 +62,51 @@ async function handleEditSubmit(changes) {
   }
 }
 
-const userToDelete = ref(null)
+// Acciones que piden confirmación antes de ejecutarse.
+const CONFIRMATIONS = Object.freeze({
+  deactivate: {
+    getTitle: (name) => `¿Estás seguro de desactivar a ${name}?`,
+    message: 'No podrá iniciar sesión hasta que lo vuelvas a activar.',
+    confirmLabel: 'Desactivar',
+  },
+  delete: {
+    getTitle: (name) => `¿Estás seguro de eliminar a ${name}?`,
+    message:
+      'Se borrará su cuenta y no se puede deshacer. Si solo quieres impedir que entre, desactívala.',
+    confirmLabel: 'Eliminar',
+  },
+})
 
-const userToDeleteName = computed(() =>
-  `${userToDelete.value?.firstName ?? ''} ${userToDelete.value?.lastName ?? ''}`.trim()
-)
+// { action: 'deactivate' | 'delete', user } mientras se espera la respuesta del admin.
+const pendingConfirmation = ref(null)
+
+const confirmation = computed(() => {
+  if (!pendingConfirmation.value) return null
+  const { action, user } = pendingConfirmation.value
+  const fullName = `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim()
+  const texts = CONFIRMATIONS[action]
+  return { title: texts.getTitle(fullName), message: texts.message, confirmLabel: texts.confirmLabel }
+})
+
+// Activar no necesita confirmación; desactivar sí, porque deja al usuario sin acceso.
+function handleToggleActiveRequest(user) {
+  if (!user.active) return toggleActive(user)
+  pendingConfirmation.value = { action: 'deactivate', user }
+}
 
 function handleDeleteRequest(user) {
-  userToDelete.value = user
+  pendingConfirmation.value = { action: 'delete', user }
 }
 
-function handleDeleteCancel() {
-  userToDelete.value = null
+function handleConfirmationCancel() {
+  pendingConfirmation.value = null
 }
 
-async function handleDeleteConfirm() {
-  const user = userToDelete.value
-  userToDelete.value = null
-  await removeUser(user)
+async function handleConfirmationAccept() {
+  const { action, user } = pendingConfirmation.value
+  pendingConfirmation.value = null
+  if (action === 'deactivate') await toggleActive(user)
+  else await removeUser(user)
 }
 
 onMounted(loadUsers)
@@ -102,7 +129,7 @@ onMounted(loadUsers)
         :current-user-id="currentUserId"
         :pending-user-id="pendingUserId"
         @change-role="changeRole"
-        @toggle-active="toggleActive"
+        @toggle-active="handleToggleActiveRequest"
         @edit="handleEditRequest"
         @delete="handleDeleteRequest"
       />
@@ -125,14 +152,13 @@ onMounted(loadUsers)
     />
 
     <ConfirmDialog
-      v-if="userToDelete"
-      :title="`¿Eliminar a ${userToDeleteName}?`"
-      confirm-label="Eliminar"
-      @confirm="handleDeleteConfirm"
-      @cancel="handleDeleteCancel"
+      v-if="confirmation"
+      :title="confirmation.title"
+      :confirm-label="confirmation.confirmLabel"
+      @confirm="handleConfirmationAccept"
+      @cancel="handleConfirmationCancel"
     >
-      Se borrará su cuenta y no se puede deshacer. Si solo quieres impedir que entre,
-      desactívala.
+      {{ confirmation.message }}
     </ConfirmDialog>
   </section>
 </template>
