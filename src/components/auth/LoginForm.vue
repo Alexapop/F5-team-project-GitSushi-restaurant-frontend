@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
+import PasswordInput from '../PasswordInput.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -62,14 +63,10 @@ const handleSubmit = async () => {
         Contraseña
       </label>
 
-      <input
+      <PasswordInput
         id="password"
         v-model="password"
-        type="password"
         autocomplete="current-password"
-        required
-        class="w-full rounded-lg border border-outline bg-surface-container px-4 py-3 outline-none transition focus:border-primary"
-        placeholder="••••••••"
       />
     </div>
         <div class="text-right">
