@@ -5,7 +5,9 @@ import { useCartStore } from "../stores/cart";
 import { useCheckoutStore } from "../stores/checkout";
 import { useLastOrderStore } from "../stores/lastOrder";
 import { useExclusiveOffersStore } from "../stores/exclusiveOffers";
+import { useAuthStore } from "../stores/auth";
 import { createOrder } from "../services/orders.service";
+import { createCheckoutSession } from "../services/payments.service";
 import {
   getBackendPaymentMethod,
   getPaymentStatusLabel,
@@ -18,6 +20,7 @@ const cartStore = useCartStore();
 const checkoutStore = useCheckoutStore();
 const lastOrderStore = useLastOrderStore();
 const offersStore = useExclusiveOffersStore();
+const authStore = useAuthStore();
 
 const isSubmitting = ref(false);
 const errorMessage = ref(null);
@@ -47,6 +50,16 @@ async function consumeAppliedOffers() {
   );
 }
 
+// Un pedido a domicilio con tarjeta online todavía no está pagado cuando el
+// backend responde a POST /orders — solo lo está una vez Stripe confirma el
+// cobro. Por eso este caso sigue un camino distinto al resto.
+function isHomeDeliveryOnlineCard() {
+  return (
+    checkoutStore.channel === "domicilio" &&
+    checkoutStore.paymentMethod === "onlineCard"
+  );
+}
+
 async function confirmOrder() {
   isSubmitting.value = true;
   errorMessage.value = null;
@@ -65,10 +78,22 @@ async function confirmOrder() {
     });
 
     lastOrderStore.setOrder(order);
-    paymentStatusMessage.value = getPaymentStatusLabel(order.paymentStatus);
 
     await consumeAppliedOffers();
 
+    if (isHomeDeliveryOnlineCard()) {
+      // No vaciamos la cesta ni navegamos a /mi-pedido todavía: el pago se
+      // confirma de verdad al volver de Stripe (ver PaymentReturnView.vue).
+      const session = await createCheckoutSession({
+        orderId: order.id,
+        email: authStore.user?.email,
+      });
+
+      window.location.href = session.checkoutUrl;
+      return;
+    }
+
+    paymentStatusMessage.value = getPaymentStatusLabel(order.paymentStatus);
     cartStore.clearCart();
 
     setTimeout(() => {
