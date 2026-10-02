@@ -5,10 +5,15 @@ import { useAuthStore } from '../stores/auth'
 import ConfirmDialog from './ConfirmDialog.vue'
 import LoadingSpinner from './LoadingSpinner.vue'
 import PaginationControl from './PaginationControl.vue'
+import UserFormModal from './UserFormModal.vue'
 import UsersTable from './UsersTable.vue'
 
 // Responsabilidad: coordinar la sección "Gestión de usuarios". Une la tabla,
-// la paginación y la confirmación de borrado con el estado de useAdminUsers.
+// la paginación, la ventana de edición y la confirmación de borrado con el
+// estado de useAdminUsers.
+
+const EDIT_ERROR_MESSAGE =
+  'No se han podido guardar los datos. Revisa que el email no lo use otra cuenta.'
 
 const authStore = useAuthStore()
 const currentUserId = computed(() => authStore.user?.id ?? null)
@@ -25,8 +30,37 @@ const {
   goToPage,
   changeRole,
   toggleActive,
+  saveUserData,
   removeUser,
 } = useAdminUsers()
+
+const userToEdit = ref(null)
+const isSavingEdit = ref(false)
+const editError = ref('')
+
+function handleEditRequest(user) {
+  editError.value = ''
+  userToEdit.value = user
+}
+
+function handleEditCancel() {
+  userToEdit.value = null
+}
+
+async function handleEditSubmit(changes) {
+  isSavingEdit.value = true
+  editError.value = ''
+
+  try {
+    await saveUserData(userToEdit.value.id, changes)
+    userToEdit.value = null
+  } catch (err) {
+    editError.value = EDIT_ERROR_MESSAGE
+    console.error('[AdminUsersPanel] Error al guardar los datos del usuario:', err)
+  } finally {
+    isSavingEdit.value = false
+  }
+}
 
 const userToDelete = ref(null)
 
@@ -55,7 +89,7 @@ onMounted(loadUsers)
   <section class="admin-users" aria-labelledby="admin-users-title">
     <header class="admin-users__header">
       <h2 id="admin-users-title" class="admin-users__title">Gestión de usuarios</h2>
-      <p class="admin-users__subtitle">Cambia el rol de cada cuenta, actívala o desactívala.</p>
+      <p class="admin-users__subtitle">Edita los datos de cada cuenta, cambia su rol, actívala o desactívala.</p>
     </header>
 
     <p v-if="actionError" class="admin-users__action-error" role="alert">{{ actionError }}</p>
@@ -69,6 +103,7 @@ onMounted(loadUsers)
         :pending-user-id="pendingUserId"
         @change-role="changeRole"
         @toggle-active="toggleActive"
+        @edit="handleEditRequest"
         @delete="handleDeleteRequest"
       />
 
@@ -79,6 +114,15 @@ onMounted(loadUsers)
         @change-page="goToPage"
       />
     </div>
+
+    <UserFormModal
+      v-if="userToEdit"
+      :initial-user="userToEdit"
+      :is-saving="isSavingEdit"
+      :error-message="editError"
+      @submit="handleEditSubmit"
+      @cancel="handleEditCancel"
+    />
 
     <ConfirmDialog
       v-if="userToDelete"

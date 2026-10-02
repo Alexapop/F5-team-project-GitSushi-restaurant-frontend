@@ -2,7 +2,7 @@
 import { ASSIGNABLE_ROLES, getRoleLabel } from '../constants/roles'
 
 // Responsabilidad: pintar la tabla de usuarios y avisar al padre de lo que
-// pide el administrador (cambiar rol, activar/desactivar, eliminar).
+// pide el administrador (cambiar rol, activar/desactivar, editar, eliminar).
 // No llama al backend. La cuenta del propio administrador no se puede tocar.
 
 const props = defineProps({
@@ -20,7 +20,7 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['change-role', 'toggle-active', 'delete'])
+const emit = defineEmits(['change-role', 'toggle-active', 'edit', 'delete'])
 
 const COLUMNS = Object.freeze(['Nombre', 'Email', 'Rol', 'Estado', 'Acciones'])
 
@@ -103,7 +103,17 @@ function handleRoleChange(user, event) {
             </button>
             <button
               type="button"
-              class="users-table__delete-button"
+              class="users-table__icon-button users-table__icon-button--edit"
+              :disabled="isLocked(user)"
+              :aria-label="`Editar a ${getFullName(user)}`"
+              title="Editar"
+              @click="emit('edit', user)"
+            >
+              <span class="material-symbols-outlined" aria-hidden="true">edit</span>
+            </button>
+            <button
+              type="button"
+              class="users-table__icon-button users-table__icon-button--delete"
               :disabled="isLocked(user)"
               :aria-label="`Eliminar a ${getFullName(user)}`"
               title="Eliminar"
@@ -177,7 +187,15 @@ function handleRoleChange(user, event) {
   @apply min-h-11 rounded-lg border border-outline px-3 text-xs font-semibold transition hover:bg-surface-container-high disabled:cursor-not-allowed disabled:opacity-60;
 }
 
-.users-table__delete-button {
-  @apply flex h-11 w-11 items-center justify-center rounded-lg border border-outline text-on-surface-variant transition hover:border-error/50 hover:text-error disabled:cursor-not-allowed disabled:opacity-60;
+.users-table__icon-button {
+  @apply flex h-11 w-11 items-center justify-center rounded-lg border border-outline text-on-surface-variant transition disabled:cursor-not-allowed disabled:opacity-60;
+}
+
+.users-table__icon-button--edit {
+  @apply hover:border-primary/50 hover:text-primary;
+}
+
+.users-table__icon-button--delete {
+  @apply hover:border-error/50 hover:text-error;
 }
 </style>

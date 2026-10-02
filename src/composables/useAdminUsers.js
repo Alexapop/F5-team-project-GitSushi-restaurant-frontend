@@ -2,7 +2,8 @@ import { ref } from 'vue'
 import { deleteUser, getUsers, updateUser } from '../services/users.service'
 
 // Responsabilidad: estado de la gestión de usuarios (lista, página, carga,
-// errores) y las acciones sobre un usuario: cambiar rol, activar/desactivar y eliminar.
+// errores) y las acciones sobre un usuario: cambiar rol, activar/desactivar,
+// editar sus datos y eliminar.
 
 const FIRST_PAGE = 1
 const LOAD_ERROR_MESSAGE = 'No se han podido cargar los usuarios. Inténtalo de nuevo más tarde.'
@@ -79,6 +80,12 @@ export function useAdminUsers() {
     )
   }
 
+  // Guarda los datos editados en la ventana. No captura el error: lo muestra
+  // la propia ventana para que el administrador pueda corregir y reintentar.
+  async function saveUserData(userId, changes) {
+    replaceUser(await updateUser(userId, changes))
+  }
+
   // Si se borra el último usuario de una página, se vuelve a la anterior.
   function removeUser(user) {
     return runUserAction(
@@ -105,6 +112,7 @@ export function useAdminUsers() {
     goToPage,
     changeRole,
     toggleActive,
+    saveUserData,
     removeUser,
   }
 }
