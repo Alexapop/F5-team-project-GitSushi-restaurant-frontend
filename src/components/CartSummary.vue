@@ -1,9 +1,12 @@
 <script setup>
 import { useCartStore } from '../stores/cart'
+import { useCheckoutStore } from '../stores/checkout'
+import { HOME_DELIVERY_FEE } from '../constants/delivery'
 
 // El widget "Tu pedido": lee y opera directamente sobre el store global de la cesta.
 // No recibe props ni emite eventos porque el store es la única fuente de verdad.
 const cartStore = useCartStore()
+const checkoutStore = useCheckoutStore()
 
 const formatCurrency = (value) =>
   value.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })
@@ -108,9 +111,21 @@ function handleRemove(line) {
           <dt>IVA</dt>
           <dd>{{ formatCurrency(cartStore.taxAmount) }}</dd>
         </div>
+        <div
+          v-if="checkoutStore.channel === 'domicilio'"
+          class="cart-summary__totals-row"
+        >
+          <dt>Gastos de envío</dt>
+          <dd>{{ formatCurrency(HOME_DELIVERY_FEE) }}</dd>
+        </div>
         <div class="cart-summary__totals-row cart-summary__totals-row--total">
           <dt>Total</dt>
-          <dd>{{ formatCurrency(cartStore.total) }}</dd>
+          <dd>{{
+            formatCurrency(
+              cartStore.total +
+                (checkoutStore.channel === 'domicilio' ? HOME_DELIVERY_FEE : 0),
+            )
+          }}</dd>
         </div>
       </dl>
     </template>

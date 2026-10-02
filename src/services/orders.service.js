@@ -9,12 +9,27 @@ const CHANNEL_TO_BACKEND = {
   domicilio: 'ONLINE',
 }
 
-export async function createOrder({ items, chefNote, channel, paymentMethod }) {
+// Traduce la dirección interna del frontend (street/city/postalCode) a la
+// forma real que espera el backend para pedidos a domicilio
+// (DeliveryAddressDTORequest: deliveryStreet/deliveryCity/deliveryPostalCode/deliveryInstructions).
+function mapAddressToBackend(address) {
+  if (!address) return undefined
+
+  return {
+    deliveryStreet: address.street,
+    deliveryCity: address.city,
+    deliveryPostalCode: address.postalCode,
+    deliveryInstructions: address.instructions || null,
+  }
+}
+
+export async function createOrder({ items, chefNote, channel, paymentMethod, address }) {
   const response = await api.post(ORDERS_ENDPOINT, {
     items,
     chefNote,
     channel: CHANNEL_TO_BACKEND[channel] ?? channel,
     paymentMethod,
+    deliveryAddress: mapAddressToBackend(address),
   })
   return response.data
 }
