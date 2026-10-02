@@ -11,7 +11,9 @@ const INVOICES = [{ id: 1 }, { id: 2 }]
 describe('invoices.service', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    api.get.mockResolvedValue({ data: { content: INVOICES, totalPages: 3 } })
+    api.get.mockResolvedValue({
+      data: { content: INVOICES, page: { size: 5, number: 0, totalElements: 12, totalPages: 3 } },
+    })
   })
 
   it('pide la primera página de 5 facturas por defecto', async () => {
@@ -40,7 +42,7 @@ describe('invoices.service', () => {
     expect(api.get.mock.calls[0][1].params).not.toHaveProperty('search')
   })
 
-  it('devuelve las facturas y el total de páginas', async () => {
+  it('devuelve las facturas y el total de páginas que viene dentro de "page"', async () => {
     const result = await getPaidInvoices()
 
     expect(result).toEqual({ items: INVOICES, totalPages: 3 })
