@@ -8,6 +8,7 @@ import { useExclusiveOffersStore } from "../stores/exclusiveOffers";
 import { useAuthStore } from "../stores/auth";
 import { createOrder } from "../services/orders.service";
 import { createCheckoutSession } from "../services/payments.service";
+import { HOME_DELIVERY_FEE } from "../constants/delivery";
 import {
   getBackendPaymentMethod,
   getPaymentStatusLabel,
@@ -32,6 +33,14 @@ const canConfirmOrder = computed(() => {
     return false;
   return true;
 });
+
+// El envío solo se cobra en pedidos a domicilio; el backend aplica el mismo
+// cargo fijo al calcular el total real del pedido.
+const homeDeliveryFee = computed(() =>
+  checkoutStore.channel === "domicilio" ? HOME_DELIVERY_FEE : 0,
+);
+
+const orderTotal = computed(() => cartStore.total + homeDeliveryFee.value);
 
 const formatCurrency = (value) =>
   value.toLocaleString("es-ES", { style: "currency", currency: "EUR" });
@@ -75,6 +84,10 @@ async function confirmOrder() {
       chefNote: checkoutStore.chefNote,
       channel: checkoutStore.channel,
       paymentMethod: getBackendPaymentMethod(checkoutStore.paymentMethod),
+      // El backend exige la dirección para cualquier pedido ONLINE/domicilio.
+      ...(checkoutStore.channel === "domicilio"
+        ? { address: checkoutStore.address }
+        : {}),
     });
 
     lastOrderStore.setOrder(order);
@@ -129,9 +142,16 @@ async function confirmOrder() {
         <dt>IVA</dt>
         <dd>{{ formatCurrency(cartStore.taxAmount) }}</dd>
       </div>
+      <div
+        v-if="homeDeliveryFee > 0"
+        class="order-confirmation__row"
+      >
+        <dt>Gastos de envío</dt>
+        <dd>{{ formatCurrency(homeDeliveryFee) }}</dd>
+      </div>
       <div class="order-confirmation__row order-confirmation__row--total">
         <dt>Total</dt>
-        <dd>{{ formatCurrency(cartStore.total) }}</dd>
+        <dd>{{ formatCurrency(orderTotal) }}</dd>
       </div>
     </dl>
 
