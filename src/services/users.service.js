@@ -29,3 +29,10 @@ export async function updateUser(id, changes) {
 export async function deleteUser(id) {
   await api.delete(`${USERS_ENDPOINT}/${id}`)
 }
+
+// Guarda los datos del propio perfil (cualquier usuario con sesión, no solo ADMIN).
+// El backend solo deja editar la cuenta propia y devuelve el usuario actualizado.
+export async function updateProfile(id, profile) {
+  const response = await api.put(`${USERS_ENDPOINT}/${id}`, profile)
+  return response.data
+}

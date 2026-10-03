@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import api from './api'
-import { deleteUser, getUsers, updateUser, USERS_PAGE_SIZE } from './users.service'
+import { deleteUser, getUsers, updateProfile, updateUser, USERS_PAGE_SIZE } from './users.service'
 
 vi.mock('./api', () => ({
-  default: { get: vi.fn(), patch: vi.fn(), delete: vi.fn() },
+    default: { get: vi.fn(), patch: vi.fn(), put: vi.fn(), delete: vi.fn() },
 }))
 
 const USERS = [{ id: 'a' }, { id: 'b' }]
@@ -50,5 +50,22 @@ describe('users.service', () => {
     await deleteUser('a')
 
     expect(api.delete).toHaveBeenCalledWith('/api/v1/users/a')
+  })
+  
+  it('guarda el propio perfil con PUT y devuelve el usuario actualizado', async () => {
+    const profile = {
+      firstName: 'Ana',
+      lastName: 'Pérez',
+      email: 'ana@example.com',
+      address: 'Calle Mayor 10',
+      postalCode: '28001',
+      city: 'Madrid',
+    }
+    api.put.mockResolvedValue({ data: { id: 'a', ...profile } })
+
+    const result = await updateProfile('a', profile)
+
+    expect(api.put).toHaveBeenCalledWith('/api/v1/users/a', profile)
+    expect(result).toEqual({ id: 'a', ...profile })
   })
 })

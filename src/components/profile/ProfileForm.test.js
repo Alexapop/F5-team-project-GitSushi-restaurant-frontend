@@ -1,9 +1,14 @@
-import { describe, expect, it } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { nextTick } from 'vue'
 import { useAuthStore } from '../../stores/auth'
+import { updateProfile } from '../../services/users.service'
 import ProfileForm from './ProfileForm.vue'
+
+vi.mock('../../services/users.service', () => ({
+  updateProfile: vi.fn(),
+}))
 
 const user = {
   id: 'test-user',
@@ -48,6 +53,11 @@ function mountForm({
 }
 
 describe('ProfileForm', () => {
+    beforeEach(() => {
+    vi.clearAllMocks()
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+  })
+
   it('precarga los datos del usuario sin mostrar errores', () => {
     const { wrapper } = mountForm()
 
@@ -136,15 +146,16 @@ describe('ProfileForm', () => {
     expect(wrapper.find('.profile-form__reset').exists()).toBe(false)
   })
 
-  it('mantiene el guardado deshabilitado aunque haya cambios válidos', async () => {
+    it('deshabilita el guardado mientras no haya cambios', async () => {
     const { wrapper } = mountForm()
+    const submit = wrapper.get('.profile-form__submit')
+
+    expect(submit.element.disabled).toBe(true)
 
     await wrapper.get('#city').setValue('Barcelona')
 
-    expect(wrapper.get('.profile-form__submit').element.disabled).toBe(true)
-    expect(wrapper.get('#profile-save-help').text()).toContain(
-      'El guardado de cambios estará disponible próximamente.'
-    )
+    expect(submit.element.disabled).toBe(false)
+    expect(wrapper.text()).not.toContain('próximamente')
   })
 
   it('valida todos los campos al enviar el formulario', async () => {
@@ -246,15 +257,100 @@ describe('ProfileForm', () => {
     expect(wrapper.text()).not.toContain('Tienes cambios sin guardar.')
   })
 
-  it('no actualiza el store ni simula un guardado al enviar datos válidos', async () => {
+    it('guarda los datos sin espacios sobrantes y actualiza el store', async () => {
+    updateProfile.mockResolvedValue({ ...user, city: 'Barcelona' })
     const { wrapper, authStore } = mountForm()
+
+    await wrapper.get('#city').setValue('  Barcelona  ')
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    expect(updateProfile).toHaveBeenCalledWith('test-user', {
+      firstName: 'Ana',
+      lastName: 'Pérez',
+      email: 'ana@example.com',
+      address: 'Calle Mayor 10',
+      postalCode: '28001',
+      city: 'Barcelona',
+    })
+    expect(authStore.user.city).toBe('Barcelona')
+    expect(wrapper.get('#city').element.value).toBe('Barcelona')
+    expect(wrapper.get('[role="status"].profile-form__feedback').text()).toBe(
+      'Tus datos se han guardado.'
+    )
+    expect(wrapper.text()).not.toContain('Tienes cambios sin guardar.')
+    expect(wrapper.get('.profile-form__submit').element.disabled).toBe(true)
+  })
+
+  it('muestra "Guardando…" y bloquea los botones mientras guarda', async () => {
+    let resolveSave
+    updateProfile.mockReturnValue(new Promise((resolve) => { resolveSave = resolve }))
+    const { wrapper } = mountForm()
 
     await wrapper.get('#city').setValue('Barcelona')
     await wrapper.get('form').trigger('submit')
+    await nextTick()
 
-    expect(wrapper.findAll('.profile-form__error')).toHaveLength(0)
-    expect(authStore.user.city).toBe('Madrid')
+    const submit = wrapper.get('.profile-form__submit')
+    expect(submit.text()).toBe('Guardando…')
+    expect(submit.element.disabled).toBe(true)
+    expect(wrapper.get('.profile-form__reset').element.disabled).toBe(true)
+
+    resolveSave({ ...user, city: 'Barcelona' })
+    await flushPromises()
+
+    expect(wrapper.get('.profile-form__submit').text()).toBe('Guardar cambios')
+  })
+
+  it('avisa si el email ya lo usa otra cuenta y mantiene los cambios', async () => {
+    updateProfile.mockRejectedValue({ response: { status: 409 } })
+    const { wrapper, authStore } = mountForm()
+
+    await wrapper.get('#email').setValue('otra@example.com')
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    expect(wrapper.get('[role="alert"].profile-form__feedback').text()).toBe(
+      'Ya existe una cuenta con este email.'
+    )
+    expect(authStore.user.email).toBe('ana@example.com')
+    expect(wrapper.get('#email').element.value).toBe('otra@example.com')
     expect(wrapper.text()).toContain('Tienes cambios sin guardar.')
-    expect(wrapper.get('.profile-form__submit').element.disabled).toBe(true)
+  })
+
+  it('muestra un error general si el guardado falla por otro motivo', async () => {
+    updateProfile.mockRejectedValue(new Error('500'))
+    const { wrapper } = mountForm()
+
+    await wrapper.get('#city').setValue('Barcelona')
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    expect(wrapper.get('[role="alert"].profile-form__feedback').text()).toBe(
+      'No se han podido guardar los cambios. Inténtalo de nuevo.'
+    )
+  })
+
+  it('oculta el mensaje de guardado al volver a editar', async () => {
+    updateProfile.mockResolvedValue({ ...user, city: 'Barcelona' })
+    const { wrapper } = mountForm()
+
+    await wrapper.get('#city').setValue('Barcelona')
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    await wrapper.get('#city').setValue('Gijón')
+
+    expect(wrapper.find('.profile-form__feedback').exists()).toBe(false)
+  })
+
+  it('no llama al backend si hay errores de validación', async () => {
+    const { wrapper } = mountForm()
+
+    await wrapper.get('#city').setValue('')
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    expect(updateProfile).not.toHaveBeenCalled()
   })
 })

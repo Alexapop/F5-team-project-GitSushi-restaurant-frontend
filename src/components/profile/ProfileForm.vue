@@ -1,12 +1,23 @@
 <script setup>
-import { nextTick, ref } from 'vue'
+import { nextTick, ref, watch } from 'vue'
 import { useAuthStore } from '../../stores/auth'
+import { updateProfile } from '../../services/users.service'
 import ProfileFormField from './ProfileFormField.vue'
 import LoadingSpinner from '../LoadingSpinner.vue'
 import { useProfileForm } from './useProfileForm'
 
+const HTTP_CONFLICT = 409
+const SAVE_MESSAGES = Object.freeze({
+  success: 'Tus datos se han guardado.',
+  conflict: 'Ya existe una cuenta con este email.',
+  error: 'No se han podido guardar los cambios. Inténtalo de nuevo.',
+})
+
 const authStore = useAuthStore()
 const formElement = ref(null)
+const isSaving = ref(false)
+// Resultado del último guardado: { type: 'success' | 'error', message } o null.
+const saveFeedback = ref(null)
 
 const {
   fields,
@@ -39,9 +50,37 @@ async function handleSubmit() {
 
   if (!hasChanges.value) return
 
-  // Pendiente del contrato del backend:
-  // enviar los datos y actualizar el store tras guardar correctamente.
+  await saveProfile()
 }
+
+// Envía los datos sin espacios sobrantes y, si va bien, actualiza el usuario
+// del store: el formulario se recarga solo con los datos guardados.
+async function saveProfile() {
+  isSaving.value = true
+  saveFeedback.value = null
+
+  const profile = Object.fromEntries(
+    fields.map(({ name }) => [name, form[name].trim()])
+  )
+
+  try {
+    const updatedUser = await updateProfile(authStore.user.id, profile)
+    authStore.user = { ...authStore.user, ...updatedUser }
+    saveFeedback.value = { type: 'success', message: SAVE_MESSAGES.success }
+  } catch (err) {
+    const message =
+      err.response?.status === HTTP_CONFLICT ? SAVE_MESSAGES.conflict : SAVE_MESSAGES.error
+    saveFeedback.value = { type: 'error', message }
+    console.error('[ProfileForm] Error al guardar el perfil:', err)
+  } finally {
+    isSaving.value = false
+  }
+}
+
+// Si el usuario vuelve a editar, el mensaje del último guardado ya no aplica.
+watch(hasChanges, (changed) => {
+  if (changed) saveFeedback.value = null
+})
 </script>
 
 <template>
@@ -95,8 +134,12 @@ async function handleSubmit() {
         Tienes cambios sin guardar.
       </p>
 
-      <p id="profile-save-help" class="profile-form__notice">
-        El guardado de cambios estará disponible próximamente.
+      <p
+        v-if="saveFeedback"
+        :class="['profile-form__feedback', `profile-form__feedback--${saveFeedback.type}`]"
+        :role="saveFeedback.type === 'error' ? 'alert' : 'status'"
+      >
+        {{ saveFeedback.message }}
       </p>
 
       <div class="profile-form__actions">
@@ -104,6 +147,7 @@ async function handleSubmit() {
           v-if="hasChanges"
           type="button"
           class="profile-form__reset"
+          :disabled="isSaving"
           @click="resetForm"
         >
           Descartar cambios
@@ -112,10 +156,9 @@ async function handleSubmit() {
         <button
           type="submit"
           class="profile-form__submit"
-          disabled
-          aria-describedby="profile-save-help"
+          :disabled="!hasChanges || isSaving"
         >
-          Guardar cambios
+          {{ isSaving ? 'Guardando…' : 'Guardar cambios' }}
         </button>
       </div>
     </form>
@@ -145,6 +188,18 @@ async function handleSubmit() {
   @apply text-sm text-on-surface;
 }
 
+.profile-form__feedback {
+  @apply text-sm font-medium;
+}
+
+.profile-form__feedback--success {
+  @apply text-secondary;
+}
+
+.profile-form__feedback--error {
+  @apply text-error;
+}
+
 .profile-form__actions {
   @apply flex flex-wrap justify-end gap-3;
 }
@@ -156,9 +211,13 @@ async function handleSubmit() {
     transition hover:bg-primary hover:text-white;
 }
 
+.profile-form__reset:disabled {
+  @apply cursor-not-allowed opacity-50;
+}
+
 .profile-form__submit {
   @apply rounded-lg bg-primary px-6 py-3
-    font-semibold text-white transition;
+    font-semibold text-white transition cursor-pointer hover:opacity-90;
 }
 
 .profile-form__submit:disabled {
