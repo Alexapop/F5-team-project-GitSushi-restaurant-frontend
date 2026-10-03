@@ -105,6 +105,17 @@ describe("OrderConfirmation", () => {
     );
   });
 
+  it("adds the home delivery fee to the total when the channel is domicilio", async () => {
+    const { wrapper, cartStore, checkoutStore } = await mountOrderConfirmation();
+    cartStore.addProduct({ id: 1, name: "Salmon Roll", price: 10 });
+    checkoutStore.setChannel("domicilio");
+    await flushPromises();
+
+    // 10 € subtotal + 1 € IVA (10%) + 2,50 € de envío = 13,50 €
+    const totalText = wrapper.find(".order-confirmation__row--total").text();
+    expect(totalText).toContain("13,50");
+  });
+
   it("sends the mapped cart items, channel and payment method, then empties the cart", async () => {
     vi.spyOn(ordersService, "createOrder").mockResolvedValue({
       id: 99,
@@ -250,10 +261,21 @@ describe("OrderConfirmation", () => {
       cartStore.addProduct({ id: 1, name: "Salmon Roll", price: 10 });
       checkoutStore.setChannel("domicilio");
       checkoutStore.setPaymentMethod("onlineCard");
+      checkoutStore.setAddress({
+        street: "Calle Mayor 1",
+        city: "Gijón",
+        postalCode: "33001",
+      });
       await flushPromises();
 
       await wrapper.find(".order-confirmation__button").trigger("click");
       await flushPromises();
+
+      expect(ordersService.createOrder).toHaveBeenCalledWith(
+        expect.objectContaining({
+          address: { street: "Calle Mayor 1", city: "Gijón", postalCode: "33001" },
+        }),
+      );
 
       expect(paymentsService.createCheckoutSession).toHaveBeenCalledWith({
         orderId: 42,

@@ -5,6 +5,8 @@ import { createPinia, setActivePinia } from 'pinia'
 import CartSummary from './CartSummary.vue'
 import { useCartStore } from '../stores/cart'
 import { useExclusiveOffersStore } from '../stores/exclusiveOffers'
+import { useCheckoutStore } from '../stores/checkout'
+import { mount, flushPromises } from '@vue/test-utils'
 
 const routes = [
   { path: '/', name: 'carta', component: { template: '<div>Carta</div>' } },
@@ -146,5 +148,18 @@ describe('CartSummary', () => {
     await wrapper.find('[aria-label="Eliminar Salmon Roll de la cesta"]').trigger('click')
 
     expect(cartStore.items).toEqual([])
+  })
+
+  it('shows the delivery fee and an updated total when the channel is domicilio', async () => {
+    const { wrapper, cartStore } = await mountCartSummary()
+    const checkoutStore = useCheckoutStore()
+    cartStore.addProduct(productA)
+    checkoutStore.setChannel('domicilio')
+    await flushPromises()
+
+    // 10 € subtotal + 1 € IVA (10%) + 2,50 € de envío = 13,50 €
+    const totalsText = wrapper.find('.cart-summary__totals').text()
+    expect(totalsText).toContain('Gastos de envío')
+    expect(totalsText).toContain('13,50')
   })
 })
