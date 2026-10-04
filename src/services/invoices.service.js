@@ -1,7 +1,7 @@
 import api from './api'
 
-// Endpoint de facturas de pedidos pagados (backend GS-46, de José Luis).
-const INVOICES_ENDPOINT = '/api/v1/invoices'
+// Endpoint de facturación de pedidos pagados (backend GS-49, de José Luis).
+const INVOICES_ENDPOINT = '/api/v1/facturation'
 export const INVOICES_PAGE_SIZE = 5
 
 // Pide una página de facturas. `page` empieza en 1 en el front y en 0 en Spring.

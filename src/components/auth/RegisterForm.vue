@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { authService } from '../../services/authService'
+import PasswordInput from '../PasswordInput.vue'
 
 const router = useRouter()
 
@@ -120,14 +121,10 @@ const handleSubmit = async () => {
         Contraseña
       </label>
 
-      <input
+      <PasswordInput
         id="password"
         v-model="password"
-        type="password"
         autocomplete="new-password"
-        required
-        class="w-full rounded-lg border border-outline bg-surface-container px-4 py-3 outline-none transition focus:border-primary"
-        placeholder="••••••••"
       />
     </div>
 
@@ -139,14 +136,10 @@ const handleSubmit = async () => {
         Confirmar contraseña
       </label>
 
-      <input
+      <PasswordInput
         id="confirm-password"
         v-model="confirmPassword"
-        type="password"
         autocomplete="new-password"
-        required
-        class="w-full rounded-lg border border-outline bg-surface-container px-4 py-3 outline-none transition focus:border-primary"
-        placeholder="••••••••"
       />
     </div>
     <div>
