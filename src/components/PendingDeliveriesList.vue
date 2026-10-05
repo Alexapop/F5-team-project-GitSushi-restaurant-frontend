@@ -12,7 +12,17 @@ const {
   acceptOrder,
 } = usePendingDeliveries()
 
+const emit = defineEmits(['order-accepted'])
+
 onMounted(fetchOrders)
+
+async function handleAccept(order) {
+  await acceptOrder(order)
+
+  if (!acceptError.value) {
+    emit('order-accepted')
+  }
+}
 </script>
 
 <template>
@@ -48,7 +58,7 @@ onMounted(fetchOrders)
               type="button"
               class="pending-deliveries__accept-btn"
               :disabled="acceptingOrderId === order.id"
-              @click="acceptOrder(order)"
+              @click="handleAccept(order)"
             >
               {{ acceptingOrderId === order.id ? 'Aceptando…' : 'Aceptar y salir a repartir' }}
             </button>
