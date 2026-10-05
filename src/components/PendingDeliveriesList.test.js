@@ -121,4 +121,37 @@ describe('PendingDeliveriesList', () => {
     expect(wrapper.text()).toContain('No se ha podido aceptar este pedido')
     expect(wrapper.text()).toContain('Pedido #9')
   })
+
+  it('emits order-accepted when the order is accepted successfully', async () => {
+    vi.spyOn(deliveryService, 'getPendingDeliveries').mockResolvedValue([
+      { id: 9, address: 'Calle Falsa 123' },
+    ])
+    vi.spyOn(deliveryService, 'assignOrderToSelf').mockResolvedValue({})
+    vi.spyOn(deliveryService, 'markOrderInTransit').mockResolvedValue({})
+
+    const wrapper = mount(PendingDeliveriesList)
+    await flushPromises()
+
+    await wrapper.find('.pending-deliveries__accept-btn').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.emitted('order-accepted')).toHaveLength(1)
+  })
+
+  it('does not emit order-accepted when accepting fails', async () => {
+    vi.spyOn(deliveryService, 'getPendingDeliveries').mockResolvedValue([
+      { id: 9, address: 'Calle Falsa 123' },
+    ])
+    vi.spyOn(deliveryService, 'assignOrderToSelf').mockRejectedValue(
+      new Error('Order is already assigned to a deliveryman'),
+    )
+
+    const wrapper = mount(PendingDeliveriesList)
+    await flushPromises()
+
+    await wrapper.find('.pending-deliveries__accept-btn').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.emitted('order-accepted')).toBeUndefined()
+  })
 })
