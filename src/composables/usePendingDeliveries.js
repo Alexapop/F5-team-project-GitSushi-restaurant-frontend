@@ -11,6 +11,7 @@ export function usePendingDeliveries() {
   const orders = ref([])
   const isLoading = ref(true)
   const error = ref(null)
+  const acceptError = ref(null)
   const acceptingOrderId = ref(null)
 
   async function fetchOrders() {
@@ -28,7 +29,7 @@ export function usePendingDeliveries() {
   }
 
   async function acceptOrder(order) {
-    error.value = null
+    acceptError.value = null
     acceptingOrderId.value = order.id
 
     try {
@@ -36,7 +37,7 @@ export function usePendingDeliveries() {
       await markOrderInTransit(order.id)
       orders.value = orders.value.filter((item) => item.id !== order.id)
     } catch (err) {
-      error.value =
+      acceptError.value =
         'No se ha podido aceptar este pedido. Puede que ya lo haya tomado otro repartidor.'
       console.error('[usePendingDeliveries] Error al aceptar el pedido:', err)
     } finally {
@@ -48,6 +49,7 @@ export function usePendingDeliveries() {
     orders,
     isLoading,
     error,
+    acceptError,
     acceptingOrderId,
     fetchOrders,
     acceptOrder,
