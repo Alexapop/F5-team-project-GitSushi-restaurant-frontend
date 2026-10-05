@@ -3,6 +3,7 @@ import api from './api'
 import {
   getKitchenOrders,
   getKitchenMetrics,
+  getAttendedOrders,
 } from './kitchen.service'
 
 vi.mock('./api', () => ({
@@ -76,5 +77,27 @@ describe('kitchen service', () => {
 
     expect(api.get).toHaveBeenCalledWith('/api/v1/kitchen/metrics')
     expect(result).toEqual(metrics)
+  })
+  
+  it('obtiene las comandas atendidas (listas, en reparto y entregadas), de la más reciente a la más antigua', async () => {
+    api.get.mockImplementation((url, { params }) => {
+      const ordersByStatus = {
+        READY: [{ id: 5, status: 'READY', channel: 'ONSITE', tableNumber: 2, total: 8.99 }],
+        ONTHEWAY: [{ id: 2, status: 'ONTHEWAY', channel: 'ONLINE', tableNumber: null, total: 8.99 }],
+        DELIVERED: [{ id: 7, status: 'DELIVERED', channel: 'ONLINE', tableNumber: null, total: '11.55' }],
+      }
+      return Promise.resolve({ data: ordersByStatus[params.status] })
+    })
+
+    const result = await getAttendedOrders()
+
+    expect(api.get).toHaveBeenCalledWith('/api/v1/orders', { params: { status: 'READY' } })
+    expect(api.get).toHaveBeenCalledWith('/api/v1/orders', { params: { status: 'ONTHEWAY' } })
+    expect(api.get).toHaveBeenCalledWith('/api/v1/orders', { params: { status: 'DELIVERED' } })
+    expect(result).toEqual([
+      { id: 7, status: 'DELIVERED', channel: 'ONLINE', tableNumber: null, total: 11.55 },
+      { id: 5, status: 'READY', channel: 'ONSITE', tableNumber: 2, total: 8.99 },
+      { id: 2, status: 'ONTHEWAY', channel: 'ONLINE', tableNumber: null, total: 8.99 },
+    ])
   })
 })

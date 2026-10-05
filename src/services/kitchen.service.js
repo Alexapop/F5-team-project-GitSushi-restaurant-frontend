@@ -2,6 +2,10 @@ import api from './api'
 
 const KITCHEN_ORDERS_ENDPOINT = '/api/v1/kitchen/orders'
 const KITCHEN_METRICS_ENDPOINT = '/api/v1/kitchen/metrics'
+const ORDERS_ENDPOINT = '/api/v1/orders'
+
+// Estados en los que cocina ya terminó la comanda.
+const ATTENDED_STATUSES = Object.freeze(['READY', 'ONTHEWAY', 'DELIVERED'])
 
 export async function getKitchenOrders() {
   const response = await api.get(KITCHEN_ORDERS_ENDPOINT)
@@ -33,4 +37,23 @@ export async function updateKitchenOrderStatus(orderId, status) {
   )
 
   return response.data
+}
+
+// Comandas que cocina ya terminó. El backend filtra por un único estado,
+// así que se pide cada uno y se juntan, de la más reciente a la más antigua.
+export async function getAttendedOrders() {
+  const responses = await Promise.all(
+    ATTENDED_STATUSES.map((status) => api.get(ORDERS_ENDPOINT, { params: { status } })),
+  )
+
+  return responses
+    .flatMap((response) => response.data)
+    .map((order) => ({
+      id: order.id,
+      status: order.status,
+      channel: order.channel,
+      tableNumber: order.tableNumber,
+      total: Number(order.total),
+    }))
+    .sort((first, second) => second.id - first.id)
 }
