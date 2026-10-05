@@ -1,5 +1,6 @@
 // src/services/orders.service.js
 import api from './api'
+import { getDeviceIdentifier } from './tables.service'
 
 const ORDERS_ENDPOINT = '/api/v1/orders'
 // Traduce el canal interno del frontend ('sala'/'domicilio') al valor real
@@ -24,13 +25,19 @@ function mapAddressToBackend(address) {
 }
 
 export async function createOrder({ items, chefNote, channel, paymentMethod, address }) {
-  const response = await api.post(ORDERS_ENDPOINT, {
-    items,
-    chefNote,
-    channel: CHANNEL_TO_BACKEND[channel] ?? channel,
-    paymentMethod,
-    deliveryAddress: mapAddressToBackend(address),
-  })
+  const response = await api.post(
+    ORDERS_ENDPOINT,
+    {
+      items,
+      chefNote,
+      channel: CHANNEL_TO_BACKEND[channel] ?? channel,
+      paymentMethod,
+      deliveryAddress: mapAddressToBackend(address),
+    },
+    // Cabecera obligatoria para que el backend resuelva la mesa en pedidos
+    // "en sala"; en pedidos a domicilio el backend la ignora sin problema.
+    { headers: { 'Device-Identifier': getDeviceIdentifier() } },
+  )
   return response.data
 }
 
