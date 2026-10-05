@@ -128,4 +128,19 @@ describe("OnTheWayOrdersList", () => {
     expect(wrapper.find(".confirm-dialog").exists()).toBe(false);
     expect(wrapper.text()).toContain("Pedido #13");
   });
+
+  it('refetches the orders when the exposed refresh method is called', async () => {
+    const spy = vi
+      .spyOn(ordersService, 'getOrdersByStatus')
+      .mockResolvedValue([]);
+
+    const wrapper = mount(OnTheWayOrdersList);
+    await flushPromises();
+    expect(spy).toHaveBeenCalledTimes(1);
+
+    await wrapper.vm.refresh();
+    await flushPromises();
+
+    expect(spy).toHaveBeenCalledTimes(2);
+  });
 });
