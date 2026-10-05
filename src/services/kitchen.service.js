@@ -13,6 +13,7 @@ export async function getKitchenOrders() {
     isDelayed: order.isDelayed,
     createdAt: order.createdAt,
     paymentStatus: order.paymentStatus,
+    channel: order.channel,
     products: order.items.map((item) => ({
       name: item.productName,
       quantity: item.quantity,

@@ -56,7 +56,7 @@ const filteredOrders = computed(() => {
 <button
   type="button"
   :class="
-    selectedChannel === 'IN_STORE'
+    selectedChannel === 'ONSITE'
       ? 'btn-primary'
       : 'btn-secondary'
   "
@@ -68,7 +68,7 @@ const filteredOrders = computed(() => {
 <button
   type="button"
   :class="
-    selectedChannel === 'DELIVERY'
+    selectedChannel === 'ONLINE'
       ? 'btn-primary'
       : 'btn-secondary'
   "
