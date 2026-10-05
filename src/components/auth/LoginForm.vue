@@ -1,15 +1,19 @@
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import PasswordInput from '../PasswordInput.vue'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 
 const email = ref('')
 const password = ref('')
 const errorMessage = ref('')
+
+// Viene de RegisterForm tras crear la cuenta (/login?registered=1).
+const isJustRegistered = computed(() => route?.query?.registered === '1')
 
 const handleSubmit = async () => {
   errorMessage.value = ''
@@ -78,6 +82,15 @@ const handleSubmit = async () => {
       </RouterLink>
     </div>
 <p
+
+<p
+  v-if="isJustRegistered && !errorMessage"
+  role="status"
+  class="text-sm text-secondary"
+>
+  Cuenta creada. Ya puedes iniciar sesión.
+</p>
+
   v-if="errorMessage"
   role="alert"
   class="text-sm text-error"
