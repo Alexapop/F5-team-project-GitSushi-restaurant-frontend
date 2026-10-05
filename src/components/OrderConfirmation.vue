@@ -27,8 +27,14 @@ const isSubmitting = ref(false);
 const errorMessage = ref(null);
 const paymentStatusMessage = ref(null);
 
+// En sala el backend necesita la mesa: si no se detectó, hay que escribirla a mano.
+const needsTableNumber = computed(
+  () => checkoutStore.channel === "sala" && !checkoutStore.tableNumber,
+);
+
 const canConfirmOrder = computed(() => {
   if (cartStore.isEmpty) return false;
+  if (needsTableNumber.value) return false;
   if (checkoutStore.channel === "sala" && !checkoutStore.paymentMethod)
     return false;
   return true;
@@ -175,6 +181,10 @@ async function confirmOrder() {
       pedido...
     </p>
 
+        <p v-if="needsTableNumber" class="order-confirmation__hint">
+      Indica tu número de mesa para continuar.
+    </p>
+
     <button
       type="button"
       class="order-confirmation__button"
@@ -213,8 +223,8 @@ async function confirmOrder() {
   @apply text-base font-semibold text-on-surface;
 }
 
-.order-confirmation__error {
-  @apply text-sm text-error;
+.order-confirmation__hint {
+  @apply text-sm text-on-surface-variant;
 }
 
 .order-confirmation__success {
