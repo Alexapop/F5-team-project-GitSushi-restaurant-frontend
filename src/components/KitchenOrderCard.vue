@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { updateKitchenOrderStatus } from '../services/kitchen.service'
+import { ORDER_STATUS_LABELS, getLabel } from '../constants/invoiceLabels'
 
 const props = defineProps({
   order: {
@@ -107,7 +108,7 @@ async function changeStatus(status) {
     </div>
 
     <p class="mt-4 text-sm text-on-surface-variant">
-      Estado: {{ currentStatus }}
+      Estado: {{ getLabel(ORDER_STATUS_LABELS, currentStatus) }}
     </p>
 
     <p
