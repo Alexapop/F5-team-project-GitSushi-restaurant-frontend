@@ -30,7 +30,25 @@ describe("orders.service", () => {
       chefNote: "Sin wasabi",
       channel: "ONSITE",
       paymentMethod: "CASH_ONSITE",
+    }, expect.anything());
+  });
+
+  it("sends the table number as a number and the device identifier header", async () => {
+    api.post.mockResolvedValue({ data: { id: 1 } });
+
+    await createOrder({
+      items: [],
+      chefNote: "",
+      channel: "sala",
+      paymentMethod: "CARD_ONSITE",
+      tableNumber: "7",
     });
+
+    expect(api.post).toHaveBeenCalledWith(
+      "/api/v1/orders",
+      expect.objectContaining({ tableNumber: 7 }),
+      { headers: { "Device-Identifier": expect.any(String) } },
+    );
   });
 
   it('translates the "domicilio" channel to the backend "ONLINE" value', async () => {
@@ -48,7 +66,7 @@ describe("orders.service", () => {
       chefNote: "",
       channel: "ONLINE",
       paymentMethod: "ONLINE_CARD",
-    });
+    }, expect.anything());
   });
 
   it('maps the delivery address to the backend contract when provided', async () => {
@@ -69,7 +87,7 @@ describe("orders.service", () => {
         deliveryPostalCode: '33001',
         deliveryInstructions: null,
       },
-    }))
+    }), expect.anything())
   })
 
   it("returns the response data as-is", async () => {

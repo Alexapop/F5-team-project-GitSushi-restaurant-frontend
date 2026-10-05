@@ -88,6 +88,10 @@ async function confirmOrder() {
       ...(checkoutStore.channel === "domicilio"
         ? { address: checkoutStore.address }
         : {}),
+      // En sala se envía el número de mesa que ha detectado o escrito el cliente.
+      ...(checkoutStore.channel === "sala" && checkoutStore.tableNumber
+        ? { tableNumber: checkoutStore.tableNumber }
+        : {}),
     });
 
     lastOrderStore.setOrder(order);
