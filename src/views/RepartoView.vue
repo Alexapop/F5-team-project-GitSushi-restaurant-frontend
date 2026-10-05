@@ -1,4 +1,5 @@
 <script setup>
+import { ref } from "vue";
 import DeliveryMetrics from "../components/DeliveryMetrics.vue";
 import PendingDeliveriesList from "../components/PendingDeliveriesList.vue";
 import OnTheWayOrdersList from "../components/OnTheWayOrdersList.vue";
@@ -6,6 +7,12 @@ import { useDeliveryMetrics } from "../composables/useDeliveryMetrics";
 
 const { metrics, isLoading, isRefreshing, error, isEmpty, refresh } =
   useDeliveryMetrics();
+
+const onTheWayOrdersListRef = ref(null);
+
+function handleOrderAccepted() {
+  onTheWayOrdersListRef.value?.refresh();
+}
 </script>
 
 <template>
@@ -41,14 +48,9 @@ const { metrics, isLoading, isRefreshing, error, isEmpty, refresh } =
       </p>
     </template>
 
-    <PendingDeliveriesList />
+    <PendingDeliveriesList @order-accepted="handleOrderAccepted" />
 
-    <!-- La asignación y el paso a "en tránsito" ya son reales (ver
-         PendingDeliveriesList), pero el backend todavía no expone qué
-         repartidor tiene asignado cada pedido en tránsito, así que aquí se
-         siguen mostrando todos los pedidos en ese estado, no solo los del
-         repartidor conectado. -->
-    <OnTheWayOrdersList />
+    <OnTheWayOrdersList ref="onTheWayOrdersListRef" />
   </main>
 </template>
 
