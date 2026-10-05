@@ -93,7 +93,7 @@ describe('KitchenOrderCard', () => {
     await flushPromises()
 
     expect(updateKitchenOrderStatus).toHaveBeenCalledWith(1042, 'READY')
-    expect(wrapper.text()).toContain('Estado: PROCESSING')
+    expect(wrapper.text()).toContain('Estado: En preparación')
     expect(wrapper.text()).toContain(
       'No se ha podido actualizar el estado.'
     )
@@ -138,7 +138,7 @@ describe('KitchenOrderCard', () => {
     await buttons[2].trigger('click')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Estado: READY')
+    expect(wrapper.text()).toContain('Estado: Listo')
     expect(wrapper.text()).toContain('Nota de comanda prioritaria')
     expect(wrapper.text()).toContain(
       'ALERGIA AL MARISCO - Preparar por separado'
