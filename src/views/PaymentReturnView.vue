@@ -45,9 +45,11 @@ async function checkPayment() {
 }
 
 async function retryPayment() {
-  const order = lastOrderStore.order;
+  // Tras volver de Stripe la app arranca de cero: el pedido completo ya no está
+  // en memoria, pero su referencia sigue guardada en el navegador.
+  const orderId = lastOrderStore.ticketReference?.id;
 
-  if (!order) {
+  if (!orderId) {
     status.value = "error";
     return;
   }
@@ -56,7 +58,7 @@ async function retryPayment() {
 
   try {
     const session = await createCheckoutSession({
-      orderId: order.id,
+      orderId,
       email: authStore.user?.email,
     });
     window.location.href = session.checkoutUrl;
