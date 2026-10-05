@@ -2,8 +2,15 @@
 import { onMounted } from 'vue'
 import { usePendingDeliveries } from '../composables/usePendingDeliveries'
 
-const { orders, isLoading, error, acceptingOrderId, fetchOrders, acceptOrder } =
-  usePendingDeliveries()
+const {
+  orders,
+  isLoading,
+  error,
+  acceptError,
+  acceptingOrderId,
+  fetchOrders,
+  acceptOrder,
+} = usePendingDeliveries()
 
 onMounted(fetchOrders)
 </script>
@@ -18,29 +25,37 @@ onMounted(fetchOrders)
       {{ error }}
     </p>
 
-    <p v-else-if="orders.length === 0" role="status">
-      No hay pedidos listos para repartir ahora mismo.
-    </p>
+    <template v-else>
+      <p v-if="orders.length === 0" role="status">
+        No hay pedidos listos para repartir ahora mismo.
+      </p>
 
-    <ul v-else class="pending-deliveries__list">
-      <li v-for="order in orders" :key="order.id" class="pending-deliveries__item">
-        <div class="pending-deliveries__info">
-          <p class="pending-deliveries__order-id">Pedido #{{ order.id }}</p>
-          <p class="pending-deliveries__address">
-            {{ order.address ?? 'Sin dirección registrada' }}
-          </p>
-        </div>
+      <template v-else>
+        <p v-if="acceptError" role="alert" class="pending-deliveries__error">
+          {{ acceptError }}
+        </p>
 
-        <button
-          type="button"
-          class="pending-deliveries__accept-btn"
-          :disabled="acceptingOrderId === order.id"
-          @click="acceptOrder(order)"
-        >
-          {{ acceptingOrderId === order.id ? 'Aceptando…' : 'Aceptar y salir a repartir' }}
-        </button>
-      </li>
-    </ul>
+        <ul class="pending-deliveries__list">
+          <li v-for="order in orders" :key="order.id" class="pending-deliveries__item">
+            <div class="pending-deliveries__info">
+              <p class="pending-deliveries__order-id">Pedido #{{ order.id }}</p>
+              <p class="pending-deliveries__address">
+                {{ order.address ?? 'Sin dirección registrada' }}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              class="pending-deliveries__accept-btn"
+              :disabled="acceptingOrderId === order.id"
+              @click="acceptOrder(order)"
+            >
+              {{ acceptingOrderId === order.id ? 'Aceptando…' : 'Aceptar y salir a repartir' }}
+            </button>
+          </li>
+        </ul>
+      </template>
+    </template>
   </section>
 </template>
 
