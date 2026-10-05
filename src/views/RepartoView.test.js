@@ -207,4 +207,30 @@ describe('RepartoView', () => {
       vi.useRealTimers()
     }
   })
+
+  it('refreshes the in-transit list as soon as an order is accepted', async () => {
+    const { getPendingDeliveries, assignOrderToSelf, markOrderInTransit } =
+      await import('../services/delivery.service')
+
+    getDeliveryMetrics.mockResolvedValue(metrics)
+    getPendingDeliveries.mockResolvedValueOnce([
+      { id: 9, address: 'Calle Falsa 123' },
+    ])
+    getPendingDeliveries.mockResolvedValue([])
+    assignOrderToSelf.mockResolvedValue({})
+    markOrderInTransit.mockResolvedValue({})
+    getOrdersByStatus.mockResolvedValue([])
+
+    const wrapper = mount(RepartoView)
+    await flushPromises()
+
+    expect(getOrdersByStatus).toHaveBeenCalledTimes(1)
+
+    await wrapper.find('.pending-deliveries__accept-btn').trigger('click')
+    await flushPromises()
+
+    expect(getOrdersByStatus).toHaveBeenCalledTimes(2)
+
+    wrapper.unmount()
+  })
 })
