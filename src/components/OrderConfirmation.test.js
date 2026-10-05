@@ -23,7 +23,8 @@ const routes = [
     component: { template: "<div>Mi pedido</div>" },
   },
 ];
-
+// Los pedidos en sala necesitan mesa: por defecto los tests tienen una ya indicada.
+const TABLE_NUMBER = 3;
 async function mountOrderConfirmation() {
   const router = createRouter({ history: createWebHistory(), routes });
   router.push("/cesta");
@@ -32,6 +33,7 @@ async function mountOrderConfirmation() {
   setActivePinia(createPinia());
   const cartStore = useCartStore();
   const checkoutStore = useCheckoutStore();
+  checkoutStore.setTableNumber(TABLE_NUMBER);
 
   const wrapper = mount(OrderConfirmation, {
     global: { plugins: [router] },
@@ -66,6 +68,31 @@ describe("OrderConfirmation", () => {
     expect(
       wrapper.find(".order-confirmation__button").attributes("disabled"),
     ).toBeDefined();
+  });
+
+    it("disables the confirm button and asks for the table when dining in without one", async () => {
+    const { wrapper, cartStore, checkoutStore } =
+      await mountOrderConfirmation();
+    cartStore.addProduct({ id: 1, name: "Salmon Roll", price: 10 });
+    checkoutStore.setPaymentMethod("cashier");
+    checkoutStore.setTableNumber(null);
+    await flushPromises();
+
+    expect(
+      wrapper.find(".order-confirmation__button").attributes("disabled"),
+    ).toBeDefined();
+    expect(wrapper.find(".order-confirmation__hint").text()).toBe(
+      "Indica tu número de mesa para continuar.",
+    );
+  });
+
+  it("does not ask for a table for home delivery orders", async () => {
+    const { wrapper, checkoutStore } = await mountOrderConfirmation();
+    checkoutStore.setChannel("domicilio");
+    checkoutStore.setTableNumber(null);
+    await flushPromises();
+
+    expect(wrapper.find(".order-confirmation__hint").exists()).toBe(false);
   });
 
   it("enables the confirm button once a dine-in payment method is selected", async () => {
@@ -142,11 +169,12 @@ describe("OrderConfirmation", () => {
     await wrapper.find(".order-confirmation__button").trigger("click");
     await flushPromises();
 
-    expect(ordersService.createOrder).toHaveBeenCalledWith({
+       expect(ordersService.createOrder).toHaveBeenCalledWith({
       items: [{ productId: 1, quantity: 1 }],
       chefNote: "Sin wasabi",
       channel: "sala",
       paymentMethod: "CASH_ONSITE",
+      tableNumber: TABLE_NUMBER,
     });
     expect(lastOrderStore.order).toEqual({
       id: 99,
