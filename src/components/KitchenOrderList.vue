@@ -66,7 +66,7 @@ const filteredOrders = computed(() => {
       ? 'btn-primary'
       : 'btn-secondary'
   "
-  @click="selectedChannel = 'IN_STORE'"
+  @click="selectedChannel = 'ONSITE'"
 >
   En Sala
 </button>
@@ -78,7 +78,7 @@ const filteredOrders = computed(() => {
       ? 'btn-primary'
       : 'btn-secondary'
   "
-  @click="selectedChannel = 'DELIVERY'"
+  @click="selectedChannel = 'ONLINE'"
 >
   A Domicilio
 </button>
