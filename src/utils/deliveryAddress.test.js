@@ -1,27 +1,36 @@
-// src/utils/deliveryAddress.js
+import { describe, it, expect } from 'vitest'
+import { getMissingAddressFields, getProfileAddress } from './deliveryAddress'
 
-// Responsabilidad: reglas de la dirección de entrega de un pedido a domicilio
-// (qué campos son obligatorios y si la dirección del perfil está completa).
+describe('deliveryAddress', () => {
+  it('lists the required fields that are empty or only spaces', () => {
+    expect(getMissingAddressFields({ street: 'Calle Mayor 1', city: '  ', postalCode: '' })).toEqual([
+      'city',
+      'postalCode',
+    ])
+  })
 
-export const REQUIRED_ADDRESS_FIELDS = Object.freeze(['street', 'city', 'postalCode'])
+  it('treats a missing address as all fields missing', () => {
+    expect(getMissingAddressFields(null)).toEqual(['street', 'city', 'postalCode'])
+  })
 
-export const ADDRESS_FIELD_ERRORS = Object.freeze({
-  street: 'Indica la calle y el número.',
-  city: 'Indica la ciudad.',
-  postalCode: 'Indica el código postal.',
+  it('returns no missing fields for a complete address', () => {
+    expect(
+      getMissingAddressFields({ street: 'Calle Mayor 1', city: 'Avilés', postalCode: '33400' }),
+    ).toEqual([])
+  })
+
+  it('builds the delivery address from a complete profile', () => {
+    const user = { address: 'Calle Mayor 1', city: 'Avilés', postalCode: '33400' }
+
+    expect(getProfileAddress(user)).toEqual({
+      street: 'Calle Mayor 1',
+      city: 'Avilés',
+      postalCode: '33400',
+    })
+  })
+
+  it('does not offer the profile address when it is incomplete', () => {
+    expect(getProfileAddress({ address: 'Calle Mayor 1', city: '', postalCode: '33400' })).toBeNull()
+    expect(getProfileAddress(null)).toBeNull()
+  })
 })
-
-export function getMissingAddressFields(address) {
-  return REQUIRED_ADDRESS_FIELDS.filter((field) => !String(address?.[field] ?? '').trim())
-}
-
-// El perfil guarda la dirección como address / city / postalCode.
-// Devuelve null si le falta algún dato, para no ofrecer una dirección incompleta.
-export function getProfileAddress(user) {
-  const address = {
-    street: user?.address ?? '',
-    city: user?.city ?? '',
-    postalCode: user?.postalCode ?? '',
-  }
-  return getMissingAddressFields(address).length === 0 ? address : null
-}

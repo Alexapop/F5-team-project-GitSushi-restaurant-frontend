@@ -96,7 +96,7 @@ describe("OrderConfirmation", () => {
     expect(wrapper.find(".order-confirmation__hint").exists()).toBe(false);
   });
 
-    it("disables the confirm button for home delivery until a payment method is chosen", async () => {
+  it("disables the confirm button for home delivery until a payment method is chosen", async () => {
     const { wrapper, cartStore, checkoutStore } = await mountOrderConfirmation();
     cartStore.addProduct({ id: 1, name: "Salmon Roll", price: 10 });
     checkoutStore.setChannel("domicilio");

@@ -1,9 +1,4 @@
-import {
-  DINE_IN_PAYMENT_METHODS,
-  getBackendPaymentMethod,
-  getPaymentStatusLabel,
-  getCollectPaymentLabel,
-} from './paymentMethods'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import api from './api'
 import {
   getKitchenOrders,
@@ -86,7 +81,7 @@ describe('kitchen service', () => {
     expect(api.get).toHaveBeenCalledWith('/api/v1/kitchen/metrics')
     expect(result).toEqual(metrics)
   })
-  
+
   it('obtiene las comandas atendidas (listas, en reparto y entregadas), de la más reciente a la más antigua', async () => {
     api.get.mockImplementation((url, { params }) => {
       const ordersByStatus = {
@@ -108,20 +103,7 @@ describe('kitchen service', () => {
       { id: 2, status: 'ONTHEWAY', channel: 'ONLINE', tableNumber: null, total: 8.99 },
     ])
   })
-})
 
-describe('getCollectPaymentLabel', () => {
-  it('names the collect button of each dine-in payment', () => {
-    expect(getCollectPaymentLabel('PENDING_CASH')).toBe('Cobrado en caja')
-    expect(getCollectPaymentLabel('PENDING_CARD_TERMINAL')).toBe('Cobrado con datáfono')
-  })
-
-  it('returns null for payments that are not collected in the restaurant', () => {
-    expect(getCollectPaymentLabel('PENDING_CASH_ON_DELIVERY')).toBeNull()
-    expect(getCollectPaymentLabel(null)).toBeNull()
-  })
-
-  
   it('marca un pedido como cobrado', async () => {
     api.patch.mockResolvedValue({ data: { id: 3, status: 'PAID', paymentStatus: null } })
 

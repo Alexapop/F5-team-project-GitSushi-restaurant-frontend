@@ -31,8 +31,7 @@ export const useCheckoutStore = defineStore("checkout", {
     setAddress(address) {
       this.address = address;
     },
-
-        // Copia: editar el pedido nunca cambia el perfil.
+    // Copia: editar el pedido nunca cambia el perfil.
     useProfileAddress(profileAddress) {
       this.addressSource = "profile";
       this.address = { ...profileAddress };
@@ -45,7 +44,6 @@ export const useCheckoutStore = defineStore("checkout", {
     revealAddressErrors() {
       this.showAddressErrors = true;
     },
-    
     setPaymentMethod(paymentMethod) {
       this.paymentMethod = paymentMethod;
     },

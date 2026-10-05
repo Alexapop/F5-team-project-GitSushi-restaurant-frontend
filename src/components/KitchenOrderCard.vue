@@ -15,10 +15,9 @@ const props = defineProps({
 const emit = defineEmits(['status-changed'])
 
 const currentStatus = ref(props.order.status ?? 'PROCESSING')
+const currentPaymentStatus = ref(props.order.paymentStatus ?? null)
 const isUpdating = ref(false)
 const error = ref(null)
-
-const currentPaymentStatus = ref(props.order.paymentStatus ?? null)
 
 const ONSITE_CHANNEL = 'ONSITE'
 // El backend solo acepta el cobro mientras el pedido está recién recibido.
@@ -116,7 +115,7 @@ async function changeStatus(status) {
       </p>
     </div>
 
-        <button
+    <button
       v-if="collectPaymentLabel"
       type="button"
       class="kitchen-order-card__collect"

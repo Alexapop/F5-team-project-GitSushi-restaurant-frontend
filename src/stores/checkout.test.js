@@ -104,7 +104,7 @@ describe("useCheckoutStore", () => {
 
     expect(checkoutStore.paymentMethod).toBe("cardOnTable");
   });
-  
+
   it("uses a copy of the profile address for the order", () => {
     const checkoutStore = useCheckoutStore();
     const profileAddress = { street: "Calle Mayor 1", city: "Avilés", postalCode: "33400" };

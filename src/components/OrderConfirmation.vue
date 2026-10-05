@@ -26,6 +26,7 @@ const authStore = useAuthStore();
 
 const ADDRESS_INCOMPLETE_MESSAGE =
   "Completa la dirección de entrega para confirmar el pedido.";
+
 const isSubmitting = ref(false);
 const errorMessage = ref(null);
 const paymentStatusMessage = ref(null);

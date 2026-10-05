@@ -157,7 +157,7 @@ describe('ChannelSelector', () => {
 
     expect(detectSpy).not.toHaveBeenCalled()
   })
-  
+
   describe('delivery address', () => {
     const CUSTOMER_WITH_ADDRESS = {
       id: 1,

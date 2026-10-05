@@ -67,6 +67,7 @@ const tableNumber = computed({
 function updateAddressField(field, value) {
   checkoutStore.setAddress({ ...(checkoutStore.address ?? {}), [field]: value })
 }
+
 </script>
 
 <template>
@@ -92,7 +93,7 @@ function updateAddressField(field, value) {
       </button>
     </div>
 
-    <div v-if="checkoutStore.channel === 'sala'" class="channel-selector__field">
+     <div v-if="checkoutStore.channel === 'sala'" class="channel-selector__field">
       <label for="table-number" class="channel-selector__label">
         Número de mesa
         <span v-if="checkoutStore.isTableAutoDetected" class="channel-selector__badge">

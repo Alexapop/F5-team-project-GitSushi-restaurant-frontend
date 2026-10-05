@@ -25,7 +25,6 @@ const emit = defineEmits(['status-changed'])
 
 const selectedChannel = ref('ALL')
 
-
 // "Atendidas" no es un canal: muestra las comandas ya terminadas en lugar de las activas.
 const ATTENDED_FILTER = 'ATTENDED'
 const isShowingAttended = computed(() => selectedChannel.value === ATTENDED_FILTER)
@@ -44,7 +43,7 @@ const filteredOrders = computed(() => {
 <template>
   <section>
     <h2 class="mb-4">
-            {{ isShowingAttended ? 'Comandas atendidas' : 'Comandas activas' }}
+      {{ isShowingAttended ? 'Comandas atendidas' : 'Comandas activas' }}
     </h2>
     <div class="mb-4 flex flex-wrap gap-2">
   <button
