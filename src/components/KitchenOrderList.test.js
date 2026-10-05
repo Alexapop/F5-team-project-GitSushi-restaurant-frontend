@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 import KitchenOrderList from './KitchenOrderList.vue'
 import KitchenOrderCard from './KitchenOrderCard.vue'
+import KitchenAttendedOrders from './KitchenAttendedOrders.vue'
 
 describe('KitchenOrderList', () => {
   it('shows the loading state', () => {
@@ -38,7 +39,7 @@ describe('KitchenOrderList', () => {
     id: 1042,
     elapsedTime: 16,
     status: 'PROCESSING',
-    channel: 'IN_STORE',
+    channel: 'ONSITE',
     products: [
       {
         name: 'Pull Nigiri',
@@ -50,7 +51,7 @@ describe('KitchenOrderList', () => {
     id: 1043,
     elapsedTime: 11,
     status: 'PROCESSING',
-    channel: 'DELIVERY',
+    channel: 'ONLINE',
     products: [
       {
         name: 'Commit Roll',
@@ -142,5 +143,22 @@ it('passes on the status change of an order to the view', async () => {
   await wrapper.findComponent(KitchenOrderCard).vm.$emit('status-changed', { id: 1042, status: 'READY' })
 
   expect(wrapper.emitted('status-changed')).toEqual([[{ id: 1042, status: 'READY' }]])
+})
+
+it('shows the attended orders instead of the active ones when the Atendidas filter is selected', async () => {
+  const wrapper = mount(KitchenOrderList, {
+    props: {
+      orders
+    },
+    global: {
+      stubs: { KitchenAttendedOrders: true }
+    }
+  })
+
+  await wrapper.findAll('button').find((button) => button.text() === 'Atendidas').trigger('click')
+
+  expect(wrapper.find('h2').text()).toBe('Comandas atendidas')
+  expect(wrapper.findComponent(KitchenAttendedOrders).exists()).toBe(true)
+  expect(wrapper.findComponent(KitchenOrderCard).exists()).toBe(false)
 })
 })
