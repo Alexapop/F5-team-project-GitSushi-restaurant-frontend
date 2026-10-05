@@ -157,4 +157,82 @@ describe('ChannelSelector', () => {
 
     expect(detectSpy).not.toHaveBeenCalled()
   })
+  
+  describe('delivery address', () => {
+    const CUSTOMER_WITH_ADDRESS = {
+      id: 1,
+      address: 'Calle Mayor 1',
+      city: 'Avilés',
+      postalCode: '33400',
+    }
+
+    function findOption(wrapper, title) {
+      return wrapper
+        .findAll('.channel-selector__address-option')
+        .find((option) => option.text().includes(title))
+    }
+
+    it('suggests the profile address when the customer has a complete one', async () => {
+      const { wrapper, checkoutStore } = await mountChannelSelector((_, authStore) => {
+        authStore.user = CUSTOMER_WITH_ADDRESS
+      })
+
+      await findDomicilioBtn(wrapper).trigger('click')
+
+      const profileOption = findOption(wrapper, 'Mi dirección del perfil')
+      expect(profileOption.attributes('aria-checked')).toBe('true')
+      expect(profileOption.text()).toContain('Calle Mayor 1 · 33400 Avilés')
+      expect(checkoutStore.address).toEqual({
+        street: 'Calle Mayor 1',
+        city: 'Avilés',
+        postalCode: '33400',
+      })
+      expect(wrapper.find('#address-street').exists()).toBe(false)
+    })
+
+    it('shows empty required fields when the customer chooses another address', async () => {
+      const { wrapper, checkoutStore } = await mountChannelSelector((_, authStore) => {
+        authStore.user = CUSTOMER_WITH_ADDRESS
+      })
+      await findDomicilioBtn(wrapper).trigger('click')
+
+      await findOption(wrapper, 'Otra dirección').trigger('click')
+
+      expect(checkoutStore.address).toBeNull()
+      expect(wrapper.find('#address-street').element.value).toBe('')
+      expect(wrapper.find('#address-street').attributes('required')).toBeDefined()
+      expect(wrapper.findAll('.channel-selector__required')).toHaveLength(3)
+    })
+
+    it('does not offer the profile address when it is incomplete', async () => {
+      const { wrapper } = await mountChannelSelector((_, authStore) => {
+        authStore.user = { id: 1, address: 'Calle Mayor 1', city: '', postalCode: '' }
+      })
+
+      await findDomicilioBtn(wrapper).trigger('click')
+
+      expect(wrapper.find('.channel-selector__address-options').exists()).toBe(false)
+      expect(wrapper.find('#address-street').exists()).toBe(true)
+    })
+
+    it('marks in red each missing field after trying to confirm, and clears it once typed', async () => {
+      const { wrapper, checkoutStore } = await mountChannelSelector((_, authStore) => {
+        authStore.user = { id: 1 }
+      })
+      await findDomicilioBtn(wrapper).trigger('click')
+      await wrapper.find('#address-street').setValue('Calle Uría 10')
+
+      checkoutStore.revealAddressErrors()
+      await flushPromises()
+
+      expect(wrapper.find('#address-street-error').exists()).toBe(false)
+      expect(wrapper.find('#address-city-error').text()).toBe('Indica la ciudad.')
+      expect(wrapper.find('#address-postal-code-error').text()).toBe('Indica el código postal.')
+      expect(wrapper.find('#address-city').attributes('aria-invalid')).toBe('true')
+
+      await wrapper.find('#address-city').setValue('Oviedo')
+
+      expect(wrapper.find('#address-city-error').exists()).toBe(false)
+    })
+  })
 })
