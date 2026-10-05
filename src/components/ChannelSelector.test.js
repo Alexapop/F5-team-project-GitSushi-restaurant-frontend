@@ -78,12 +78,17 @@ describe('ChannelSelector', () => {
     expect(router.currentRoute.value.name).toBe('login')
   })
 
-  it('updates the table number in the store when typed', async () => {
+    it('lets the customer choose only an existing table, from 1 to 10', async () => {
     const { wrapper, checkoutStore } = await mountChannelSelector()
 
-    await wrapper.find('#table-number').setValue('12')
+    const options = wrapper.findAll('#table-number option').map((option) => option.text())
+    expect(options).toEqual([
+      'Elige tu mesa', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10',
+    ])
 
-    expect(checkoutStore.tableNumber).toBe('12')
+    await wrapper.find('#table-number').setValue(7)
+
+    expect(checkoutStore.tableNumber).toBe(7)
   })
 
   it('updates each address field in the store without overwriting the others', async () => {

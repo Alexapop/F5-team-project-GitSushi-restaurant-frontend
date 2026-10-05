@@ -4,6 +4,8 @@ import { useRouter } from 'vue-router'
 import { useCheckoutStore } from '../stores/checkout'
 import { useAuthStore } from '../stores/auth'
 import { useTableDetection } from '../composables/useTableDetection'
+import { TABLE_NUMBERS } from '../constants/tables'
+
 import {
   ADDRESS_FIELD_ERRORS,
   getMissingAddressFields,
@@ -105,16 +107,15 @@ function updateAddressField(field, value) {
         Detectando la mesa de tu dispositivo...
       </p>
       <p v-else-if="tableDetectionError" class="channel-selector__hint channel-selector__hint--error">
-        {{ tableDetectionError }} Puedes introducirla manualmente.
+        {{ tableDetectionError }} Elígela en la lista.
       </p>
 
-      <input
-        id="table-number"
-        v-model="tableNumber"
-        type="text"
-        class="channel-selector__input"
-        placeholder="Ej. 12"
-      />
+    <select id="table-number" v-model="tableNumber" class="channel-selector__input">
+        <option value="" disabled>Elige tu mesa</option>
+        <option v-for="number in TABLE_NUMBERS" :key="number" :value="number">
+          {{ number }}
+        </option>
+      </select>
     </div>
 
     <div v-else class="channel-selector__address">
