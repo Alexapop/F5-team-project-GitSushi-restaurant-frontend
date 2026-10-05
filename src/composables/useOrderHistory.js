@@ -1,9 +1,11 @@
 import { ref } from 'vue'
-import { getOrderHistory } from '../mocks/orderHistory.mock'
+import { getOrderHistory } from '../services/orderHistory.service'
+import { useAuthStore } from '../stores/auth'
 
 const PAGE_SIZE = 3
 
 export function useOrderHistory() {
+  const authStore = useAuthStore()
   const orders = ref([])
   const isLoading = ref(false)
   const error = ref(null)
@@ -15,7 +17,7 @@ export function useOrderHistory() {
     isLoading.value = true
     error.value = null
     try {
-      const result = await getOrderHistory({ page, size: PAGE_SIZE })
+      const result = await getOrderHistory({ userId: authStore.user?.id, page, size: PAGE_SIZE })
       orders.value = result.items
       currentPage.value = result.page
       totalPages.value = result.totalPages

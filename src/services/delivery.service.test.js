@@ -1,6 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import api from './api'
-import { getDeliveryMetrics, markOrderAsDelivered } from './delivery.service'
+import {
+  getDeliveryMetrics,
+  getPendingDeliveries,
+  assignOrderToSelf,
+  markOrderInTransit,
+  markOrderAsDelivered,
+} from './delivery.service'
 
 vi.mock('./api', () => ({
   default: {
@@ -14,7 +20,7 @@ describe('delivery.service', () => {
     vi.resetAllMocks()
   })
 
-  it('consulta las métricas y devuelve la respuesta del backend', async () => {
+  it('fetches the metrics and returns the backend response', async () => {
     const metrics = {
       readyCount: 4,
       inTransitCount: 2,
@@ -30,7 +36,7 @@ describe('delivery.service', () => {
     expect(result).toEqual(metrics)
   })
 
-  it('conserva los valores cero cuando no hay pedidos', async () => {
+  it('keeps the zero values when there are no orders', async () => {
     const metrics = {
       readyCount: 0,
       inTransitCount: 0,
@@ -43,11 +49,55 @@ describe('delivery.service', () => {
     expect(await getDeliveryMetrics()).toEqual(metrics)
   })
 
-  it('propaga el error para que la vista pueda gestionarlo', async () => {
+  it('propagates the error so the view can handle it', async () => {
     const error = new Error('No se pueden cargar las métricas')
     api.get.mockRejectedValue(error)
 
     await expect(getDeliveryMetrics()).rejects.toBe(error)
+  })
+
+  it('requests the orders that are ready for delivery and still unassigned', async () => {
+    const pending = [{ id: 9, address: 'Calle Falsa 123' }]
+    api.get.mockResolvedValue({ data: pending })
+
+    const result = await getPendingDeliveries()
+
+    expect(api.get).toHaveBeenCalledWith('/api/v1/delivery/orders/pending')
+    expect(result).toEqual(pending)
+  })
+
+  it('assigns the authenticated deliveryman to an order', async () => {
+    const updatedOrder = { id: 9, status: 'READY' }
+    api.patch.mockResolvedValue({ data: updatedOrder })
+
+    const result = await assignOrderToSelf(9)
+
+    expect(api.patch).toHaveBeenCalledWith('/api/v1/delivery/orders/9/assign')
+    expect(result).toEqual(updatedOrder)
+  })
+
+  it('propagates the error when the order is already assigned to someone else', async () => {
+    const error = new Error('Order is already assigned to a deliveryman')
+    api.patch.mockRejectedValue(error)
+
+    await expect(assignOrderToSelf(9)).rejects.toBe(error)
+  })
+
+  it('marks an assigned order as in transit', async () => {
+    const updatedOrder = { id: 9, status: 'ONTHEWAY' }
+    api.patch.mockResolvedValue({ data: updatedOrder })
+
+    const result = await markOrderInTransit(9)
+
+    expect(api.patch).toHaveBeenCalledWith('/api/v1/delivery/orders/9/in-transit')
+    expect(result).toEqual(updatedOrder)
+  })
+
+  it('propagates the error when the order has no deliveryman assigned yet', async () => {
+    const error = new Error('Order must be assigned to a deliveryman before it can be marked as in transit')
+    api.patch.mockRejectedValue(error)
+
+    await expect(markOrderInTransit(9)).rejects.toBe(error)
   })
 
   it('marks an order as delivered with the cash collected flag', async () => {
