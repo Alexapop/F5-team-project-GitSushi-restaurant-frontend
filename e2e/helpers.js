@@ -40,24 +40,9 @@ export async function switchUser(page, user) {
   await login(page, user)
 }
 
-// El backend exige la cabecera CSRF en PATCH/POST, igual que hace axios en la app.
-async function csrfHeader(page) {
-  const cookies = await page.context().cookies()
-  const token = cookies.find((cookie) => cookie.name === 'XSRF-TOKEN')?.value
-  return token ? { 'X-XSRF-TOKEN': token } : {}
-}
-
 // Llamadas a la API con la sesión del usuario que está en el navegador.
 export async function apiGet(page, path) {
   const response = await page.request.get(`${API_URL}${path}`)
   expect(response.ok(), `GET ${path} → ${response.status()}`).toBe(true)
-  return response.json()
-}
-
-export async function apiPatch(page, path) {
-  const response = await page.request.patch(`${API_URL}${path}`, {
-    headers: await csrfHeader(page),
-  })
-  expect(response.ok(), `PATCH ${path} → ${response.status()}`).toBe(true)
   return response.json()
 }

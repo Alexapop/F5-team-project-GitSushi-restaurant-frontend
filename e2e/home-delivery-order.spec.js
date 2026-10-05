@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { USERS, apiGet, apiPatch, login, switchUser } from './helpers'
+import { USERS, apiGet, login, switchUser } from './helpers'
 
 // Recorrido 5: ciclo completo de un pedido a domicilio pagado en efectivo.
 // Cliente → cocina → reparto → facturación, con el backend real.
@@ -46,26 +46,25 @@ test('un pedido a domicilio en efectivo llega a facturación al cobrarse en la e
     await expect(card.getByText('Estado: READY')).toBeVisible()
   })
 
-  await test.step('el repartidor se asigna el pedido y sale a entregarlo', async () => {
+    await test.step('el repartidor acepta el pedido, lo entrega y confirma el cobro', async () => {
     await switchUser(page, USERS.delivery)
-    // GS-192 (en curso): el dashboard de Reparto aún no tiene estos dos botones.
-    // Mientras tanto se usan los endpoints reales que llamará esa pantalla.
-    await apiPatch(page, `/api/v1/delivery/orders/${orderId}/assign`)
-    await apiPatch(page, `/api/v1/delivery/orders/${orderId}/in-transit`)
-  })
-
-  await test.step('el repartidor lo entrega y confirma el cobro en efectivo', async () => {
     await page.goto('/reparto')
 
-    const orderItem = page
+    const pendingOrder = page
+      .locator('.pending-deliveries__item')
+      .filter({ has: page.getByText(`Pedido #${orderId}`, { exact: true }) })
+    await pendingOrder.getByRole('button', { name: 'Aceptar y salir a repartir' }).click()
+    await expect(pendingOrder).toHaveCount(0)
+
+    const onTheWayOrder = page
       .locator('.on-the-way-orders__item')
       .filter({ has: page.getByText(`Pedido #${orderId}`, { exact: true }) })
-    await orderItem.getByRole('button', { name: 'Marcar como ENTREGADO' }).click()
+    await onTheWayOrder.getByRole('button', { name: 'Marcar como ENTREGADO' }).click()
 
     const dialog = page.getByRole('dialog')
     await expect(dialog).toContainText(`#${orderId}`)
     await dialog.getByRole('button', { name: 'Sí, cobrado' }).click()
-    await expect(orderItem).toHaveCount(0)
+    await expect(onTheWayOrder).toHaveCount(0)
   })
 
   await test.step('el admin encuentra la factura del pedido en Facturación', async () => {
