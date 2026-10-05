@@ -24,7 +24,7 @@ function mapAddressToBackend(address) {
   }
 }
 
-export async function createOrder({ items, chefNote, channel, paymentMethod, address }) {
+export async function createOrder({ items, chefNote, channel, paymentMethod, address, tableNumber }) {
   const response = await api.post(
     ORDERS_ENDPOINT,
     {
@@ -33,6 +33,7 @@ export async function createOrder({ items, chefNote, channel, paymentMethod, add
       channel: CHANNEL_TO_BACKEND[channel] ?? channel,
       paymentMethod,
       deliveryAddress: mapAddressToBackend(address),
+      tableNumber: tableNumber ? Number(tableNumber) : undefined,
     },
     // Cabecera obligatoria para que el backend resuelva la mesa en pedidos
     // "en sala"; en pedidos a domicilio el backend la ignora sin problema.
