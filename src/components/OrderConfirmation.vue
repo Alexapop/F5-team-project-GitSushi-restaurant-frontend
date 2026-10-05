@@ -34,10 +34,12 @@ const canConfirmOrder = computed(() => {
   return true;
 });
 
-// El envío solo se cobra en pedidos a domicilio; el backend aplica el mismo
-// cargo fijo al calcular el total real del pedido.
+// El envío solo se cobra en pedidos a domicilio con productos; el backend aplica
+// el mismo cargo fijo al calcular el total real del pedido.
 const homeDeliveryFee = computed(() =>
-  checkoutStore.channel === "domicilio" ? HOME_DELIVERY_FEE : 0,
+  checkoutStore.channel === "domicilio" && !cartStore.isEmpty
+    ? HOME_DELIVERY_FEE
+    : 0,
 );
 
 const orderTotal = computed(() => cartStore.total + homeDeliveryFee.value);
