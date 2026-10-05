@@ -3,8 +3,11 @@ import { flushPromises, mount } from '@vue/test-utils'
 import KitchenOrderCard from './KitchenOrderCard.vue'
 import { updateKitchenOrderStatus } from '../services/kitchen.service'
 
+import { markOrderAsPaid, updateKitchenOrderStatus } from '../services/kitchen.service'
+
 vi.mock('../services/kitchen.service', () => ({
   updateKitchenOrderStatus: vi.fn(),
+  markOrderAsPaid: vi.fn(),
 }))
 
 const order = {
@@ -167,4 +170,10 @@ describe('KitchenOrderCard', () => {
 
     expect(wrapper.emitted('status-changed')).toBeUndefined()
   })
+  import { markOrderAsPaid, updateKitchenOrderStatus } from '../services/kitchen.service'
+
+vi.mock('../services/kitchen.service', () => ({
+  updateKitchenOrderStatus: vi.fn(),
+  markOrderAsPaid: vi.fn(),
+}))
 })

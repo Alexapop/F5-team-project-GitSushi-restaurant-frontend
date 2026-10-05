@@ -1,14 +1,21 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  DINE_IN_PAYMENT_METHODS,
+  getBackendPaymentMethod,
+  getPaymentStatusLabel,
+  getCollectPaymentLabel,
+} from './paymentMethods'
 import api from './api'
 import {
   getKitchenOrders,
   getKitchenMetrics,
   getAttendedOrders,
+  markOrderAsPaid,
 } from './kitchen.service'
 
 vi.mock('./api', () => ({
   default: {
     get: vi.fn(),
+    patch: vi.fn(),
   },
 }))
 
@@ -100,5 +107,27 @@ describe('kitchen service', () => {
       { id: 5, status: 'READY', channel: 'ONSITE', tableNumber: 2, total: 8.99 },
       { id: 2, status: 'ONTHEWAY', channel: 'ONLINE', tableNumber: null, total: 8.99 },
     ])
+  })
+})
+
+describe('getCollectPaymentLabel', () => {
+  it('names the collect button of each dine-in payment', () => {
+    expect(getCollectPaymentLabel('PENDING_CASH')).toBe('Cobrado en caja')
+    expect(getCollectPaymentLabel('PENDING_CARD_TERMINAL')).toBe('Cobrado con datáfono')
+  })
+
+  it('returns null for payments that are not collected in the restaurant', () => {
+    expect(getCollectPaymentLabel('PENDING_CASH_ON_DELIVERY')).toBeNull()
+    expect(getCollectPaymentLabel(null)).toBeNull()
+  })
+
+  
+  it('marca un pedido como cobrado', async () => {
+    api.patch.mockResolvedValue({ data: { id: 3, status: 'PAID', paymentStatus: null } })
+
+    const result = await markOrderAsPaid(3)
+
+    expect(api.patch).toHaveBeenCalledWith('/api/v1/orders/3/paid')
+    expect(result).toEqual({ id: 3, status: 'PAID', paymentStatus: null })
   })
 })
