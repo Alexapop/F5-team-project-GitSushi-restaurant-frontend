@@ -41,9 +41,9 @@ test('un pedido a domicilio en efectivo llega a facturación al cobrarse en la e
       .locator('article')
       .filter({ has: page.getByRole('heading', { name: `#${orderId}`, exact: true }) })
     await card.getByRole('button', { name: 'En curso' }).click()
-    await expect(card.getByText('Estado: PROCESSING')).toBeVisible()
+    await expect(card.getByText('Estado: En preparación')).toBeVisible()
     await card.getByRole('button', { name: 'Listo pase' }).click()
-    await expect(card.getByText('Estado: READY')).toBeVisible()
+    await expect(card.getByText('Estado: Listo')).toBeVisible()
   })
 
     await test.step('el repartidor acepta el pedido, lo entrega y confirma el cobro', async () => {

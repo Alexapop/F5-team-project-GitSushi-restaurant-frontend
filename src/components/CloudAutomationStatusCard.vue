@@ -5,14 +5,16 @@ import { useCronStatus } from '../composables/useCronStatus'
 
 // Responsabilidad: tarjeta de estado del "Cloud Automation Service" en el panel de
 // administración. Consume el endpoint real GET /sistema/cron-status.
-
+const NEVER_SYNCED_LABEL = 'todavía no se ha ejecutado'
 const { status, isLoading, loadError, fetchStatus } = useCronStatus()
 
 onMounted(() => {
   fetchStatus()
 })
 
+// Sin fecha (el cron aún no se ha ejecutado) no se formatea: new Date(null) sería 1970.
 function formatSyncDate(isoDate) {
+  if (!isoDate) return NEVER_SYNCED_LABEL
   return new Date(isoDate).toLocaleString('es-ES', {
     day: '2-digit',
     month: 'short',

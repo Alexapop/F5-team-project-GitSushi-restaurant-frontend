@@ -19,7 +19,12 @@ const HOME_DELIVERY_TICKET = {
   total: 21.2,
   paymentMethod: 'CASH_ON_DELIVERY',
   paymentStatus: 'PENDING_CASH_ON_DELIVERY',
-  deliveryAddress: { street: 'Calle Mayor 1', city: 'Avilés', postalCode: '33400', instructions: '2º B' },
+    deliveryAddress: {
+    deliveryStreet: 'Calle Mayor 1',
+    deliveryCity: 'Avilés',
+    deliveryPostalCode: '33400',
+    deliveryInstructions: '2º B',
+  },
 }
 
 describe('mapTicket', () => {
@@ -31,7 +36,17 @@ describe('mapTicket', () => {
     expect(ticket.items).toEqual([
       { id: 0, name: 'Pull Nigiri', quantity: 2, unitPrice: 8.5, lineTotal: 17 },
     ])
-    expect(ticket.deliveryAddress).toEqual(HOME_DELIVERY_TICKET.deliveryAddress)
+  })
+  
+  it('maps the delivery address fields sent by the backend', () => {
+    const ticket = mapTicket(HOME_DELIVERY_TICKET)
+
+    expect(ticket.deliveryAddress).toEqual({
+      street: 'Calle Mayor 1',
+      city: 'Avilés',
+      postalCode: '33400',
+      instructions: '2º B',
+    })
   })
 
   it('maps the amounts as numbers', () => {

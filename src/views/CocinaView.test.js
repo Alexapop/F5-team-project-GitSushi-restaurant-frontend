@@ -83,4 +83,20 @@ describe('CocinaView', () => {
     expect(wrapper.findComponent(KitchenMetrics).props('isLoading')).toBe(false)
     expect(wrapper.findComponent(KitchenOrderList).props('orders')).toEqual(ORDERS)
   })
+  
+  it('vuelve a cargar las métricas cuando cambia el estado de una comanda, sin ocultarlas', async () => {
+    getKitchenOrders.mockResolvedValue(ORDERS)
+    getKitchenMetrics.mockResolvedValue(METRICS)
+    const wrapper = mountView()
+    await flushPromises()
+
+    const UPDATED_METRICS = { activeOrders: 1, delayedOrders: 1 }
+    getKitchenMetrics.mockResolvedValue(UPDATED_METRICS)
+    wrapper.findComponent(KitchenOrderList).vm.$emit('status-changed', { id: 7, status: 'DELAYED' })
+    expect(wrapper.findComponent(KitchenMetrics).props('isLoading')).toBe(false)
+    await flushPromises()
+
+    expect(getKitchenMetrics).toHaveBeenCalledTimes(2)
+    expect(wrapper.findComponent(KitchenMetrics).props('metrics')).toEqual(UPDATED_METRICS)
+  })
 })

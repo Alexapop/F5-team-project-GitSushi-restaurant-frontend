@@ -116,6 +116,16 @@ describe("OrderConfirmation", () => {
     expect(totalText).toContain("13,50");
   });
 
+    it("does not charge the home delivery fee while the cart is empty", async () => {
+    const { wrapper, checkoutStore } = await mountOrderConfirmation();
+    checkoutStore.setChannel("domicilio");
+    await flushPromises();
+
+    const totalText = wrapper.find(".order-confirmation__row--total").text();
+    expect(totalText).toContain("0,00");
+    expect(wrapper.text()).not.toContain("Gastos de envío");
+  });
+
   it("sends the mapped cart items, channel and payment method, then empties the cart", async () => {
     vi.spyOn(ordersService, "createOrder").mockResolvedValue({
       id: 99,

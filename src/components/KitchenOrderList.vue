@@ -18,6 +18,10 @@ const props = defineProps({
   }
 })
 
+
+// Reenvía a la vista el cambio de estado de una comanda.
+const emit = defineEmits(['status-changed'])
+
 const selectedChannel = ref('ALL')
 
 const filteredOrders = computed(() => {
@@ -103,6 +107,7 @@ const filteredOrders = computed(() => {
   v-for="order in filteredOrders"
   :key="order.id"
   :order="order"
+  @status-changed="emit('status-changed', $event)"
 />
     </div>
   </section>
