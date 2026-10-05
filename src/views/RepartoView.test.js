@@ -224,12 +224,39 @@ describe('RepartoView', () => {
     const wrapper = mount(RepartoView)
     await flushPromises()
 
-    expect(getOrdersByStatus).toHaveBeenCalledTimes(1)
+    // Una llamada para "en tránsito" (OnTheWayOrdersList) y otra para
+    // "entregados hoy" (DeliveredTodayList), ambas al montar.
+    expect(getOrdersByStatus).toHaveBeenCalledTimes(2)
 
     await wrapper.find('.pending-deliveries__accept-btn').trigger('click')
     await flushPromises()
 
+    // Aceptar un pedido solo refresca la lista de "en tránsito".
+    expect(getOrdersByStatus).toHaveBeenCalledTimes(3)
+
+    wrapper.unmount()
+  })
+
+  it('refreshes the delivered-today list as soon as an order is marked as delivered', async () => {
+    const { markOrderAsDelivered } = await import('../services/delivery.service')
+
+    getDeliveryMetrics.mockResolvedValue(metrics)
+    getOrdersByStatus.mockResolvedValueOnce([
+      { id: 20, paymentMethod: 'ONLINE_CARD', total: 15 },
+    ])
+    getOrdersByStatus.mockResolvedValue([])
+    markOrderAsDelivered.mockResolvedValue({})
+
+    const wrapper = mount(RepartoView)
+    await flushPromises()
+
     expect(getOrdersByStatus).toHaveBeenCalledTimes(2)
+
+    await wrapper.find('.on-the-way-orders__deliver-btn').trigger('click')
+    await flushPromises()
+
+    // Una llamada más: refresca la lista de "entregados hoy".
+    expect(getOrdersByStatus).toHaveBeenCalledTimes(3)
 
     wrapper.unmount()
   })
