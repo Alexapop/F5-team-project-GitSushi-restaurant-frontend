@@ -4,6 +4,7 @@ import LoadingSpinner from './LoadingSpinner.vue'
 import { getAttendedOrders } from '../services/kitchen.service'
 import { ORDER_STATUS_LABELS, getLabel } from '../constants/invoiceLabels'
 import { formatCurrency } from '../utils/formatCurrency'
+import { useAutoRefresh } from '../composables/useAutoRefresh'
 
 // Responsabilidad: listar las comandas que cocina ya terminó (listas, en reparto
 // y entregadas) para poder consultarlas sin pedírselas al administrador.
@@ -24,16 +25,20 @@ function getBadgeModifier(status) {
   return `kitchen-attended__badge--${status.toLowerCase()}`
 }
 
-onMounted(async () => {
+async function loadOrders() {
   try {
     orders.value = await getAttendedOrders()
+    loadError.value = ''
   } catch (err) {
     loadError.value = LOAD_ERROR_MESSAGE
     console.error('[KitchenAttendedOrders] Error al cargar las comandas atendidas:', err)
   } finally {
     isLoading.value = false
   }
-})
+}
+
+onMounted(loadOrders)
+useAutoRefresh(loadOrders)
 </script>
 
 <template>

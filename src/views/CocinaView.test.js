@@ -1,9 +1,10 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import CocinaView from './CocinaView.vue'
 import KitchenMetrics from '../components/KitchenMetrics.vue'
 import KitchenOrderList from '../components/KitchenOrderList.vue'
 import { getKitchenOrders, getKitchenMetrics } from '../services/kitchen.service'
+import { AUTO_REFRESH_INTERVAL_MS } from '../constants/autoRefresh'
 
 // Responsabilidad: la vista de Cocina carga comandas y métricas al entrar
 // y pasa a cada panel sus datos, su estado de carga y su error.
@@ -98,5 +99,30 @@ describe('CocinaView', () => {
 
     expect(getKitchenMetrics).toHaveBeenCalledTimes(2)
     expect(wrapper.findComponent(KitchenMetrics).props('metrics')).toEqual(UPDATED_METRICS)
+  })
+
+  describe('actualización automática', () => {
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    it('vuelve a pedir comandas y métricas cada 10 s sin ocultar las que ya se ven', async () => {
+      vi.useFakeTimers()
+      getKitchenOrders.mockResolvedValue(ORDERS)
+      getKitchenMetrics.mockResolvedValue(METRICS)
+      const wrapper = mountView()
+      await flushPromises()
+
+      const NEW_ORDERS = [...ORDERS, { id: 8, status: 'PLACED', products: [] }]
+      getKitchenOrders.mockResolvedValue(NEW_ORDERS)
+      vi.advanceTimersByTime(AUTO_REFRESH_INTERVAL_MS)
+      expect(wrapper.findComponent(KitchenOrderList).props('isLoading')).toBe(false)
+      await flushPromises()
+
+      expect(getKitchenOrders).toHaveBeenCalledTimes(2)
+      expect(getKitchenMetrics).toHaveBeenCalledTimes(2)
+      expect(wrapper.findComponent(KitchenOrderList).props('orders')).toEqual(NEW_ORDERS)
+      wrapper.unmount()
+    })
   })
 })
