@@ -31,6 +31,16 @@ function mapItem(item, index) {
     lineTotal: Number(item.lineTotal),
   }
 }
+// El backend envía la dirección con prefijo (deliveryStreet, deliveryCity...).
+function mapAddress(address) {
+  if (!address) return null
+  return {
+    street: address.deliveryStreet,
+    city: address.deliveryCity,
+    postalCode: address.deliveryPostalCode,
+    instructions: address.deliveryInstructions ?? null,
+  }
+}
 
 export function mapTicket(ticket) {
   return {
@@ -49,6 +59,6 @@ export function mapTicket(ticket) {
     vatAmount: Number(ticket.vatAmount),
     deliveryFee: Number(ticket.deliveryFee ?? 0),
     total: Number(ticket.total),
-    deliveryAddress: ticket.deliveryAddress ?? null,
+    deliveryAddress: mapAddress(ticket.deliveryAddress),
   }
 }
