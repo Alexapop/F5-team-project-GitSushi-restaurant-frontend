@@ -38,7 +38,7 @@ describe('KitchenOrderList', () => {
     id: 1042,
     elapsedTime: 16,
     status: 'PROCESSING',
-    channel: 'IN_STORE',
+    channel: 'ONSITE',
     products: [
       {
         name: 'Pull Nigiri',
@@ -50,7 +50,7 @@ describe('KitchenOrderList', () => {
     id: 1043,
     elapsedTime: 11,
     status: 'PROCESSING',
-    channel: 'DELIVERY',
+    channel: 'ONLINE',
     products: [
       {
         name: 'Commit Roll',
