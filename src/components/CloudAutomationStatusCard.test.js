@@ -70,4 +70,18 @@ describe("CloudAutomationStatusCard", () => {
       "Todavía no hay datos de sincronización disponibles",
     );
   });
+  
+  it("says the sync has not run yet when there is no last sync date", async () => {
+    vi.spyOn(cronStatusService, "getCronStatus").mockResolvedValue({
+      status: "ONLINE",
+      lastSyncAt: null,
+      lastError: null,
+    });
+    const wrapper = mount(CloudAutomationStatusCard);
+    await flushPromises();
+
+    expect(wrapper.find(".cloud-automation-status__sync").text()).toBe(
+      "Última sincronización: todavía no se ha ejecutado",
+    );
+  });
 });
