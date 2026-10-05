@@ -88,6 +88,11 @@ async function confirmOrder() {
       ...(checkoutStore.channel === "domicilio"
         ? { address: checkoutStore.address }
         : {}),
+      // El backend usa este número de mesa para resolverla, con prioridad
+      // sobre el Device-Identifier (ver OrderService.resolveTable).
+      ...(checkoutStore.channel === "sala" && checkoutStore.tableNumber
+        ? { tableNumber: checkoutStore.tableNumber }
+        : {}),
     });
 
     lastOrderStore.setOrder(order);

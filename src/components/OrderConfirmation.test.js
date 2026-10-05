@@ -313,4 +313,23 @@ describe("OrderConfirmation", () => {
       expect(cartStore.isEmpty).toBe(true);
     });
   });
+
+it("sends the table number when confirming a dine-in order with a table selected", async () => {
+  vi.spyOn(ordersService, "createOrder").mockResolvedValue({
+    id: 99,
+    paymentStatus: "PENDING_CASH",
+  });
+  const { wrapper, cartStore, checkoutStore } = await mountOrderConfirmation();
+  cartStore.addProduct({ id: 1, name: "Salmon Roll", price: 10 });
+  checkoutStore.setPaymentMethod("cashier");
+  checkoutStore.setTableNumber(5);
+  await flushPromises();
+
+  await wrapper.find(".order-confirmation__button").trigger("click");
+  await flushPromises();
+
+  expect(ordersService.createOrder).toHaveBeenCalledWith(
+    expect.objectContaining({ tableNumber: 5 }),
+  );
+});
 })
