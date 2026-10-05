@@ -1,14 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { createPinia, setActivePinia } from 'pinia'
 import { useOrderHistory } from './useOrderHistory'
-import * as orderHistoryMock from '../mocks/orderHistory.mock'
+import { useAuthStore } from '../stores/auth'
+import * as orderHistoryService from '../services/orderHistory.service'
 
 describe('useOrderHistory', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
+    setActivePinia(createPinia())
+    useAuthStore().user = { id: 'user-1' }
   })
 
   it('sets isLoading to true while fetching and false when finished', async () => {
-    vi.spyOn(orderHistoryMock, 'getOrderHistory').mockResolvedValue({
+    vi.spyOn(orderHistoryService, 'getOrderHistory').mockResolvedValue({
       items: [], page: 1, size: 3, totalItems: 0, totalPages: 1,
     })
     const { isLoading, fetchHistory } = useOrderHistory()
@@ -21,7 +25,7 @@ describe('useOrderHistory', () => {
   })
 
   it('stores the fetched orders and pagination state on success', async () => {
-    vi.spyOn(orderHistoryMock, 'getOrderHistory').mockResolvedValue({
+    vi.spyOn(orderHistoryService, 'getOrderHistory').mockResolvedValue({
       items: [{ id: 101, date: '2026-09-20T21:10:00', items: [], total: 17.5 }],
       page: 2,
       size: 3,
@@ -40,8 +44,19 @@ describe('useOrderHistory', () => {
     expect(totalItems.value).toBe(5)
   })
 
+  it('requests the history for the authenticated user', async () => {
+    const spy = vi.spyOn(orderHistoryService, 'getOrderHistory').mockResolvedValue({
+      items: [], page: 1, size: 3, totalItems: 0, totalPages: 1,
+    })
+    const { fetchHistory } = useOrderHistory()
+
+    await fetchHistory()
+
+    expect(spy).toHaveBeenCalledWith({ userId: 'user-1', page: 1, size: 3 })
+  })
+
   it('stores an error message when the request fails', async () => {
-    vi.spyOn(orderHistoryMock, 'getOrderHistory').mockRejectedValue(new Error('network error'))
+    vi.spyOn(orderHistoryService, 'getOrderHistory').mockRejectedValue(new Error('network error'))
     const { error, fetchHistory } = useOrderHistory()
 
     await fetchHistory()
@@ -52,7 +67,7 @@ describe('useOrderHistory', () => {
   })
 
   it('does not fetch when the requested page is out of range', async () => {
-    const spy = vi.spyOn(orderHistoryMock, 'getOrderHistory').mockResolvedValue({
+    const spy = vi.spyOn(orderHistoryService, 'getOrderHistory').mockResolvedValue({
       items: [], page: 1, size: 3, totalItems: 0, totalPages: 2,
     })
     const { fetchHistory, goToPage, totalPages } = useOrderHistory()
