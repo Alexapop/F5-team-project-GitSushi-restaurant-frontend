@@ -4,6 +4,7 @@ import RepartoView from './RepartoView.vue'
 import DeliveryMetrics from '../components/DeliveryMetrics.vue'
 import { getDeliveryMetrics } from '../services/delivery.service'
 import { getOrdersByStatus } from '../services/orders.service'
+import { getPendingDeliveries } from '../services/delivery.service'
 
 vi.mock('../services/orders.service', () => ({
   getOrdersByStatus: vi.fn(),
@@ -12,6 +13,9 @@ vi.mock('../services/orders.service', () => ({
 vi.mock('../services/delivery.service', () => ({
   getDeliveryMetrics: vi.fn(),
   markOrderAsDelivered: vi.fn(),
+  getPendingDeliveries: vi.fn(),
+  assignOrderToSelf: vi.fn(),
+  markOrderInTransit: vi.fn(),
 }))
 
 const metrics = {
@@ -25,9 +29,10 @@ describe('RepartoView', () => {
   beforeEach(() => {
     vi.resetAllMocks()
     getOrdersByStatus.mockResolvedValue([])
+    getPendingDeliveries.mockResolvedValue([])
   })
 
-  it('muestra carga hasta recibir las métricas', async () => {
+  it('shows loading until the metrics are received', async () => {
     let resolveRequest
 
     getDeliveryMetrics.mockReturnValue(
@@ -53,7 +58,7 @@ describe('RepartoView', () => {
     wrapper.unmount()
   })
 
-  it('muestra las tarjetas y un aviso cuando no hay pedidos', async () => {
+  it('shows the cards and a notice when there are no orders', async () => {
     getDeliveryMetrics.mockResolvedValue({
       readyCount: 0,
       inTransitCount: 0,
@@ -72,7 +77,7 @@ describe('RepartoView', () => {
     wrapper.unmount()
   })
 
-  it('muestra un error sin presentar ceros como datos reales', async () => {
+  it('shows an error without presenting zeros as real data', async () => {
     getDeliveryMetrics.mockRejectedValue(new Error('Network error'))
 
     const wrapper = mount(RepartoView)
@@ -87,7 +92,7 @@ describe('RepartoView', () => {
     wrapper.unmount()
   })
 
-  it('permite recuperar los datos después de un error', async () => {
+  it('allows retrying to load the data after an error', async () => {
     getDeliveryMetrics
       .mockRejectedValueOnce(new Error('Network error'))
       .mockResolvedValueOnce(metrics)
@@ -106,99 +111,126 @@ describe('RepartoView', () => {
 
     wrapper.unmount()
   })
-  it('actualiza las tarjetas automáticamente sin desmontar la vista', async () => {
-  vi.useFakeTimers()
-  let wrapper
 
-  try {
-    getDeliveryMetrics
-      .mockResolvedValueOnce(metrics)
-      .mockResolvedValue({
-        ...metrics,
-        readyCount: 3,
-        inTransitCount: 3,
-      })
+  it('automatically refreshes the cards without unmounting the view', async () => {
+    vi.useFakeTimers()
+    let wrapper
 
-    wrapper = mount(RepartoView)
-    await vi.advanceTimersByTimeAsync(0)
+    try {
+      getDeliveryMetrics
+        .mockResolvedValueOnce(metrics)
+        .mockResolvedValue({
+          ...metrics,
+          readyCount: 3,
+          inTransitCount: 3,
+        })
 
-    expect(
-      wrapper.getComponent(DeliveryMetrics).props('metrics').readyCount
-    ).toBe(4)
+      wrapper = mount(RepartoView)
+      await vi.advanceTimersByTimeAsync(0)
 
-    await vi.advanceTimersByTimeAsync(10_000)
+      expect(
+        wrapper.getComponent(DeliveryMetrics).props('metrics').readyCount
+      ).toBe(4)
 
-    expect(getDeliveryMetrics).toHaveBeenCalledTimes(2)
-    expect(
-      wrapper.getComponent(DeliveryMetrics).props('metrics').readyCount
-    ).toBe(3)
-    expect(
-      wrapper.getComponent(DeliveryMetrics).props('metrics').inTransitCount
-    ).toBe(3)
-  } finally {
-    wrapper?.unmount()
-    vi.useRealTimers()
-  }
-})
+      await vi.advanceTimersByTimeAsync(10_000)
 
-it('conserva los últimos datos si falla una actualización y se recupera', async () => {
-  vi.useFakeTimers()
-  let wrapper
+      expect(getDeliveryMetrics).toHaveBeenCalledTimes(2)
+      expect(
+        wrapper.getComponent(DeliveryMetrics).props('metrics').readyCount
+      ).toBe(3)
+      expect(
+        wrapper.getComponent(DeliveryMetrics).props('metrics').inTransitCount
+      ).toBe(3)
+    } finally {
+      wrapper?.unmount()
+      vi.useRealTimers()
+    }
+  })
 
-  try {
-    getDeliveryMetrics
-      .mockResolvedValueOnce(metrics)
-      .mockRejectedValueOnce(new Error('Network error'))
-      .mockResolvedValue({
-        ...metrics,
-        deliveredTodayCount: 8,
-      })
+  it('keeps the last data when a refresh fails and then recovers', async () => {
+    vi.useFakeTimers()
+    let wrapper
 
-    wrapper = mount(RepartoView)
-    await vi.advanceTimersByTimeAsync(0)
-    await vi.advanceTimersByTimeAsync(10_000)
+    try {
+      getDeliveryMetrics
+        .mockResolvedValueOnce(metrics)
+        .mockRejectedValueOnce(new Error('Network error'))
+        .mockResolvedValue({
+          ...metrics,
+          deliveredTodayCount: 8,
+        })
 
-    expect(wrapper.getComponent(DeliveryMetrics).props('metrics')).toEqual(
-      metrics
-    )
-    expect(wrapper.get('[role="alert"]').text()).toContain(
-      'Se muestran los últimos disponibles.'
-    )
+      wrapper = mount(RepartoView)
+      await vi.advanceTimersByTimeAsync(0)
+      await vi.advanceTimersByTimeAsync(10_000)
 
-    await vi.advanceTimersByTimeAsync(10_000)
+      expect(wrapper.getComponent(DeliveryMetrics).props('metrics')).toEqual(
+        metrics
+      )
+      expect(wrapper.get('[role="alert"]').text()).toContain(
+        'Se muestran los últimos disponibles.'
+      )
 
-    expect(wrapper.find('[role="alert"]').exists()).toBe(false)
-    expect(
-      wrapper.getComponent(DeliveryMetrics).props('metrics')
-        .deliveredTodayCount
-    ).toBe(8)
-  } finally {
-    wrapper?.unmount()
-    vi.useRealTimers()
-  }
-})
+      await vi.advanceTimersByTimeAsync(10_000)
 
-it('deja de consultar al salir de la vista', async () => {
-  vi.useFakeTimers()
-  let wrapper
+      expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+      expect(
+        wrapper.getComponent(DeliveryMetrics).props('metrics')
+          .deliveredTodayCount
+      ).toBe(8)
+    } finally {
+      wrapper?.unmount()
+      vi.useRealTimers()
+    }
+  })
 
-  try {
+  it('stops polling when leaving the view', async () => {
+    vi.useFakeTimers()
+    let wrapper
+
+    try {
+      getDeliveryMetrics.mockResolvedValue(metrics)
+
+      wrapper = mount(RepartoView)
+      await vi.advanceTimersByTimeAsync(0)
+
+      expect(getDeliveryMetrics).toHaveBeenCalledTimes(1)
+
+      wrapper.unmount()
+      wrapper = null
+
+      await vi.advanceTimersByTimeAsync(30_000)
+
+      expect(getDeliveryMetrics).toHaveBeenCalledTimes(1)
+    } finally {
+      wrapper?.unmount()
+      vi.useRealTimers()
+    }
+  })
+
+  it('refreshes the in-transit list as soon as an order is accepted', async () => {
+    const { getPendingDeliveries, assignOrderToSelf, markOrderInTransit } =
+      await import('../services/delivery.service')
+
     getDeliveryMetrics.mockResolvedValue(metrics)
+    getPendingDeliveries.mockResolvedValueOnce([
+      { id: 9, address: 'Calle Falsa 123' },
+    ])
+    getPendingDeliveries.mockResolvedValue([])
+    assignOrderToSelf.mockResolvedValue({})
+    markOrderInTransit.mockResolvedValue({})
+    getOrdersByStatus.mockResolvedValue([])
 
-    wrapper = mount(RepartoView)
-    await vi.advanceTimersByTimeAsync(0)
+    const wrapper = mount(RepartoView)
+    await flushPromises()
 
-    expect(getDeliveryMetrics).toHaveBeenCalledTimes(1)
+    expect(getOrdersByStatus).toHaveBeenCalledTimes(1)
+
+    await wrapper.find('.pending-deliveries__accept-btn').trigger('click')
+    await flushPromises()
+
+    expect(getOrdersByStatus).toHaveBeenCalledTimes(2)
 
     wrapper.unmount()
-    wrapper = null
-
-    await vi.advanceTimersByTimeAsync(30_000)
-
-    expect(getDeliveryMetrics).toHaveBeenCalledTimes(1)
-  } finally {
-    wrapper?.unmount()
-    vi.useRealTimers()
-  }
-})
+  })
 })

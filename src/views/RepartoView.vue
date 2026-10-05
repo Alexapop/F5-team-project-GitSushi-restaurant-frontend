@@ -1,10 +1,18 @@
 <script setup>
+import { ref } from "vue";
 import DeliveryMetrics from "../components/DeliveryMetrics.vue";
+import PendingDeliveriesList from "../components/PendingDeliveriesList.vue";
 import OnTheWayOrdersList from "../components/OnTheWayOrdersList.vue";
 import { useDeliveryMetrics } from "../composables/useDeliveryMetrics";
 
 const { metrics, isLoading, isRefreshing, error, isEmpty, refresh } =
   useDeliveryMetrics();
+
+const onTheWayOrdersListRef = ref(null);
+
+function handleOrderAccepted() {
+  onTheWayOrdersListRef.value?.refresh();
+}
 </script>
 
 <template>
@@ -39,10 +47,10 @@ const { metrics, isLoading, isRefreshing, error, isEmpty, refresh } =
         No hay pedidos listos, en tránsito ni entregados hoy.
       </p>
     </template>
-    <!-- Lista provisional: todavía no existe la asignación real de
-         repartidor ni la acción de marcar "en tránsito",
-         así que se muestran todos los pedidos en ese estado. -->
-    <OnTheWayOrdersList />
+
+    <PendingDeliveriesList @order-accepted="handleOrderAccepted" />
+
+    <OnTheWayOrdersList ref="onTheWayOrdersListRef" />
   </main>
 </template>
 

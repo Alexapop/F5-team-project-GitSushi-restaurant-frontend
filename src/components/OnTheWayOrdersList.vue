@@ -16,6 +16,8 @@ const {
 
 onMounted(fetchOrders)
 
+defineExpose({ refresh: fetchOrders })
+
 const formatCurrency = (value) =>
   value.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })
 
