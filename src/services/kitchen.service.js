@@ -57,3 +57,10 @@ export async function getAttendedOrders() {
     }))
     .sort((first, second) => second.id - first.id)
 }
+
+// El personal confirma que ha cobrado un pedido de sala: el backend lo pasa a
+// PAID y genera su factura. Solo se acepta mientras el pedido está en PLACED.
+export async function markOrderAsPaid(orderId) {
+  const response = await api.patch(`${ORDERS_ENDPOINT}/${orderId}/paid`)
+  return response.data
+}
