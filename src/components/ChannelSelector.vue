@@ -4,6 +4,18 @@ import { useRouter } from 'vue-router'
 import { useCheckoutStore } from '../stores/checkout'
 import { useAuthStore } from '../stores/auth'
 import { useTableDetection } from '../composables/useTableDetection'
+import {
+  ADDRESS_FIELD_ERRORS,
+  getMissingAddressFields,
+  getProfileAddress,
+} from '../utils/deliveryAddress'
+
+// Campos de la dirección de entrega (los id los usan también los tests E2E).
+const ADDRESS_FIELDS = Object.freeze([
+  { key: 'street', id: 'address-street', label: 'Calle y número' },
+  { key: 'city', id: 'address-city', label: 'Ciudad' },
+  { key: 'postalCode', id: 'address-postal-code', label: 'Código postal' },
+])
 
 const checkoutStore = useCheckoutStore()
 const authStore = useAuthStore()
@@ -27,6 +39,22 @@ function selectHomeDeliveryChannel() {
     return
   }
   checkoutStore.setChannel('domicilio')
+  // Se sugiere la dirección del perfil, si está completa y aún no se ha escrito otra.
+  if (profileAddress.value && !checkoutStore.address) {
+    checkoutStore.useProfileAddress(profileAddress.value)
+  }
+}
+
+const profileAddress = computed(() => getProfileAddress(authStore.user))
+const isUsingProfileAddress = computed(() => checkoutStore.addressSource === 'profile')
+
+// Los errores solo se ven después de intentar confirmar el pedido.
+const missingAddressFields = computed(() =>
+  checkoutStore.showAddressErrors ? getMissingAddressFields(checkoutStore.address) : [],
+)
+
+function getFieldError(field) {
+  return missingAddressFields.value.includes(field) ? ADDRESS_FIELD_ERRORS[field] : null
 }
 
 // Cada campo se expone como un computed con get/set: lee del store
@@ -39,21 +67,6 @@ const tableNumber = computed({
 function updateAddressField(field, value) {
   checkoutStore.setAddress({ ...(checkoutStore.address ?? {}), [field]: value })
 }
-
-const street = computed({
-  get: () => checkoutStore.address?.street ?? '',
-  set: (value) => updateAddressField('street', value),
-})
-
-const city = computed({
-  get: () => checkoutStore.address?.city ?? '',
-  set: (value) => updateAddressField('city', value),
-})
-
-const postalCode = computed({
-  get: () => checkoutStore.address?.postalCode ?? '',
-  set: (value) => updateAddressField('postalCode', value),
-})
 </script>
 
 <template>
@@ -79,7 +92,7 @@ const postalCode = computed({
       </button>
     </div>
 
-     <div v-if="checkoutStore.channel === 'sala'" class="channel-selector__field">
+    <div v-if="checkoutStore.channel === 'sala'" class="channel-selector__field">
       <label for="table-number" class="channel-selector__label">
         Número de mesa
         <span v-if="checkoutStore.isTableAutoDetected" class="channel-selector__badge">
@@ -104,23 +117,64 @@ const postalCode = computed({
     </div>
 
     <div v-else class="channel-selector__address">
-      <div class="channel-selector__field">
-        <label for="address-street" class="channel-selector__label">Calle y número</label>
-        <input id="address-street" v-model="street" type="text" class="channel-selector__input" />
+      <div
+        v-if="profileAddress"
+        class="channel-selector__address-options"
+        role="radiogroup"
+        aria-label="Dirección de entrega"
+      >
+        <button
+          type="button"
+          role="radio"
+          class="channel-selector__address-option"
+          :class="{ 'channel-selector__address-option--active': isUsingProfileAddress }"
+          :aria-checked="isUsingProfileAddress"
+          @click="checkoutStore.useProfileAddress(profileAddress)"
+        >
+          <span class="channel-selector__address-option-title">Mi dirección del perfil</span>
+          <span class="channel-selector__address-option-detail">
+            {{ profileAddress.street }} · {{ profileAddress.postalCode }} {{ profileAddress.city }}
+          </span>
+        </button>
+        <button
+          type="button"
+          role="radio"
+          class="channel-selector__address-option"
+          :class="{ 'channel-selector__address-option--active': !isUsingProfileAddress }"
+          :aria-checked="!isUsingProfileAddress"
+          @click="checkoutStore.useOtherAddress()"
+        >
+          <span class="channel-selector__address-option-title">Otra dirección</span>
+          <span class="channel-selector__address-option-detail">Solo para este pedido</span>
+        </button>
       </div>
-      <div class="channel-selector__field">
-        <label for="address-city" class="channel-selector__label">Ciudad</label>
-        <input id="address-city" v-model="city" type="text" class="channel-selector__input" />
-      </div>
-      <div class="channel-selector__field">
-        <label for="address-postal-code" class="channel-selector__label">Código postal</label>
-        <input
-          id="address-postal-code"
-          v-model="postalCode"
-          type="text"
-          class="channel-selector__input"
-        />
-      </div>
+
+      <template v-if="!profileAddress || !isUsingProfileAddress">
+        <div v-for="field in ADDRESS_FIELDS" :key="field.key" class="channel-selector__field">
+          <label :for="field.id" class="channel-selector__label">
+            {{ field.label }}
+            <span class="channel-selector__required" aria-hidden="true">*</span>
+          </label>
+          <input
+            :id="field.id"
+            :value="checkoutStore.address?.[field.key] ?? ''"
+            type="text"
+            required
+            class="channel-selector__input"
+            :class="{ 'channel-selector__input--error': getFieldError(field.key) }"
+            :aria-invalid="Boolean(getFieldError(field.key))"
+            :aria-describedby="getFieldError(field.key) ? `${field.id}-error` : undefined"
+            @input="updateAddressField(field.key, $event.target.value)"
+          />
+          <p
+            v-if="getFieldError(field.key)"
+            :id="`${field.id}-error`"
+            class="channel-selector__field-error"
+          >
+            {{ getFieldError(field.key) }}
+          </p>
+        </div>
+      </template>
     </div>
   </section>
 </template>
@@ -160,5 +214,29 @@ const postalCode = computed({
 }
 .channel-selector__address {
   @apply flex flex-col gap-3;
+}
+.channel-selector__address-options {
+  @apply flex flex-col gap-2;
+}
+.channel-selector__address-option {
+  @apply flex flex-col items-start gap-0.5 rounded-lg border border-outline-variant px-3 py-2 text-left text-sm transition-colors hover:bg-primary-container;
+}
+.channel-selector__address-option--active {
+  @apply border-2 border-primary;
+}
+.channel-selector__address-option-title {
+  @apply font-semibold text-on-surface;
+}
+.channel-selector__address-option-detail {
+  @apply text-xs text-on-surface-variant;
+}
+.channel-selector__required {
+  @apply text-primary;
+}
+.channel-selector__input--error {
+  @apply border-2 border-error;
+}
+.channel-selector__field-error {
+  @apply text-xs text-error;
 }
 </style>
