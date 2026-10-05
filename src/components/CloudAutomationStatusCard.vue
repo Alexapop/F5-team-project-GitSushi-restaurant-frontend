@@ -4,8 +4,7 @@ import LoadingSpinner from './LoadingSpinner.vue'
 import { useCronStatus } from '../composables/useCronStatus'
 
 // Responsabilidad: tarjeta de estado del "Cloud Automation Service" en el panel de
-// administración. Construida contra un mock (ver cronStatus.mock.js) a falta del
-// endpoint real GET /sistema/cron-status, todavía no implementado en backend.
+// administración. Consume el endpoint real GET /sistema/cron-status.
 
 const { status, isLoading, loadError, fetchStatus } = useCronStatus()
 
