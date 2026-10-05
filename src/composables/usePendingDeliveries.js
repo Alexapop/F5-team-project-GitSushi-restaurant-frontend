@@ -14,8 +14,11 @@ export function usePendingDeliveries() {
   const acceptError = ref(null)
   const acceptingOrderId = ref(null)
 
+  // Solo "cargando" la primera vez: al refrescar se mantienen los datos en pantalla.
+  let hasLoaded = false
+
   async function fetchOrders() {
-    isLoading.value = true
+    isLoading.value = !hasLoaded
     error.value = null
 
     try {
@@ -25,6 +28,7 @@ export function usePendingDeliveries() {
       console.error('[usePendingDeliveries] Error al cargar los pedidos:', err)
     } finally {
       isLoading.value = false
+      hasLoaded = true
     }
   }
 

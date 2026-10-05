@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted } from 'vue'
 import { usePendingDeliveries } from '../composables/usePendingDeliveries'
+import { useAutoRefresh } from '../composables/useAutoRefresh'
 
 const {
   orders,
@@ -15,6 +16,7 @@ const {
 const emit = defineEmits(['order-accepted'])
 
 onMounted(fetchOrders)
+useAutoRefresh(fetchOrders)
 
 async function handleAccept(order) {
   await acceptOrder(order)
