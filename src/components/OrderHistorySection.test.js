@@ -3,8 +3,9 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import OrderHistorySection from './OrderHistorySection.vue'
 import PaginationControl from './PaginationControl.vue'
-import * as orderHistoryMock from '../mocks/orderHistory.mock'
+import * as orderHistoryService from '../services/orderHistory.service'
 import { useCartStore } from '../stores/cart'
+import { useAuthStore } from '../stores/auth'
 
 function buildResult(overrides = {}) {
   return {
@@ -28,6 +29,7 @@ async function mountOrderHistorySection() {
   const pinia = createPinia()
   setActivePinia(pinia)
   const cartStore = useCartStore()
+  useAuthStore().user = { id: 'user-1' }
 
   const wrapper = mount(OrderHistorySection, {
     global: { plugins: [pinia] },
@@ -47,7 +49,7 @@ describe('OrderHistorySection', () => {
     const pendingRequest = new Promise((resolve) => {
       resolveRequest = resolve
     })
-    vi.spyOn(orderHistoryMock, 'getOrderHistory').mockReturnValue(pendingRequest)
+    vi.spyOn(orderHistoryService, 'getOrderHistory').mockReturnValue(pendingRequest)
 
     const { wrapper } = await mountOrderHistorySection()
     await flushPromises()
@@ -59,7 +61,7 @@ describe('OrderHistorySection', () => {
   })
 
   it('shows an error message when the request fails', async () => {
-    vi.spyOn(orderHistoryMock, 'getOrderHistory').mockRejectedValue(new Error('network error'))
+    vi.spyOn(orderHistoryService, 'getOrderHistory').mockRejectedValue(new Error('network error'))
     const { wrapper } = await mountOrderHistorySection()
 
     await flushPromises()
@@ -68,7 +70,7 @@ describe('OrderHistorySection', () => {
   })
 
   it('shows an empty message when there are no previous orders', async () => {
-    vi.spyOn(orderHistoryMock, 'getOrderHistory').mockResolvedValue(
+    vi.spyOn(orderHistoryService, 'getOrderHistory').mockResolvedValue(
       buildResult({ items: [], totalItems: 0 }),
     )
     const { wrapper } = await mountOrderHistorySection()
@@ -79,7 +81,7 @@ describe('OrderHistorySection', () => {
   })
 
   it('renders a summarised card for each previous order', async () => {
-    vi.spyOn(orderHistoryMock, 'getOrderHistory').mockResolvedValue(buildResult())
+    vi.spyOn(orderHistoryService, 'getOrderHistory').mockResolvedValue(buildResult())
     const { wrapper } = await mountOrderHistorySection()
 
     await flushPromises()
@@ -88,7 +90,9 @@ describe('OrderHistorySection', () => {
   })
 
   it('hides the "show all" button when there are 3 or fewer orders in total', async () => {
-    vi.spyOn(orderHistoryMock, 'getOrderHistory').mockResolvedValue(buildResult({ totalItems: 3 }))
+    vi.spyOn(orderHistoryService, 'getOrderHistory').mockResolvedValue(
+      buildResult({ totalItems: 3 }),
+    )
     const { wrapper } = await mountOrderHistorySection()
 
     await flushPromises()
@@ -97,7 +101,7 @@ describe('OrderHistorySection', () => {
   })
 
   it('reveals pagination controls after clicking "show all" when there is more than one page', async () => {
-    vi.spyOn(orderHistoryMock, 'getOrderHistory').mockResolvedValue(
+    vi.spyOn(orderHistoryService, 'getOrderHistory').mockResolvedValue(
       buildResult({ totalItems: 5, totalPages: 2 }),
     )
     const { wrapper } = await mountOrderHistorySection()
@@ -111,13 +115,18 @@ describe('OrderHistorySection', () => {
     expect(wrapper.findComponent(PaginationControl).exists()).toBe(true)
   })
 
-  it('adds each line of the repeated order to the cart with its original quantity', async () => {
-    vi.spyOn(orderHistoryMock, 'getOrderHistory').mockResolvedValue(buildResult())
+  it('adds each repeated line to the cart using the real repeat endpoint', async () => {
+    vi.spyOn(orderHistoryService, 'getOrderHistory').mockResolvedValue(buildResult())
+    const repeatSpy = vi
+      .spyOn(orderHistoryService, 'getRepeatOrderItems')
+      .mockResolvedValue([{ productId: 3, name: 'Kaisen Init', price: 6.5, quantity: 2 }])
     const { wrapper, cartStore } = await mountOrderHistorySection()
     await flushPromises()
 
     await wrapper.find('.order-history__repeat-btn').trigger('click')
+    await flushPromises()
 
+    expect(repeatSpy).toHaveBeenCalledWith(101)
     expect(cartStore.items).toEqual([
       {
         product: { id: 3, name: 'Kaisen Init', price: 6.5 },
@@ -126,8 +135,23 @@ describe('OrderHistorySection', () => {
     ])
   })
 
+  it('shows an error and does not touch the cart when repeating the order fails', async () => {
+    vi.spyOn(orderHistoryService, 'getOrderHistory').mockResolvedValue(buildResult())
+    vi.spyOn(orderHistoryService, 'getRepeatOrderItems').mockRejectedValue(
+      new Error('network error'),
+    )
+    const { wrapper, cartStore } = await mountOrderHistorySection()
+    await flushPromises()
+
+    await wrapper.find('.order-history__repeat-btn').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('No se ha podido repetir este pedido')
+    expect(cartStore.items).toEqual([])
+  })
+
   it('does not show the unavailable-products warning when every item is available', async () => {
-    vi.spyOn(orderHistoryMock, 'getOrderHistory').mockResolvedValue(buildResult())
+    vi.spyOn(orderHistoryService, 'getOrderHistory').mockResolvedValue(buildResult())
     const { wrapper } = await mountOrderHistorySection()
 
     await flushPromises()
@@ -136,7 +160,7 @@ describe('OrderHistorySection', () => {
   })
 
   it('shows a warning when an order includes an unavailable product', async () => {
-    vi.spyOn(orderHistoryMock, 'getOrderHistory').mockResolvedValue(
+    vi.spyOn(orderHistoryService, 'getOrderHistory').mockResolvedValue(
       buildResult({
         items: [
           {
@@ -156,34 +180,5 @@ describe('OrderHistorySection', () => {
     await flushPromises()
 
     expect(wrapper.find('.order-history__unavailable-warning').exists()).toBe(true)
-  })
-
-  it('excludes unavailable products from the cart when repeating an order', async () => {
-    vi.spyOn(orderHistoryMock, 'getOrderHistory').mockResolvedValue(
-      buildResult({
-        items: [
-          {
-            id: 101,
-            date: '2026-09-20T21:10:00',
-            items: [
-              { productId: 3, name: 'Kaisen Init', quantity: 2, price: 6.5, available: true },
-              { productId: 27, name: 'Caesar Commit', quantity: 1, price: 6.9, available: false },
-            ],
-            total: 19.9,
-          },
-        ],
-      }),
-    )
-    const { wrapper, cartStore } = await mountOrderHistorySection()
-    await flushPromises()
-
-    await wrapper.find('.order-history__repeat-btn').trigger('click')
-
-    expect(cartStore.items).toEqual([
-      {
-        product: { id: 3, name: 'Kaisen Init', price: 6.5 },
-        quantity: 2,
-      },
-    ])
   })
 })
