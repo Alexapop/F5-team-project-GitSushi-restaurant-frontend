@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue'
-import heroImage from '../assets/hero.jfif'
+import heroImage from '../assets/hero.webp'
 import { useAuthStore } from '../stores/auth'
 import { ROLES } from '../constants/roles'
 
