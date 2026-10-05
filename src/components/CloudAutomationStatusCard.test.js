@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
 import CloudAutomationStatusCard from "./CloudAutomationStatusCard.vue";
-import * as cronStatusMock from "../mocks/cronStatus.mock";
+import * as cronStatusService from "../services/cronStatus.service";
 
 describe("CloudAutomationStatusCard", () => {
   beforeEach(() => {
@@ -10,7 +10,7 @@ describe("CloudAutomationStatusCard", () => {
   });
 
   it("shows a loading indicator while fetching", async () => {
-    vi.spyOn(cronStatusMock, "getCronStatus").mockReturnValue(
+    vi.spyOn(cronStatusService, "getCronStatus").mockReturnValue(
       new Promise(() => {}),
     );
     const wrapper = mount(CloudAutomationStatusCard);
@@ -20,7 +20,7 @@ describe("CloudAutomationStatusCard", () => {
   });
 
   it("shows the online badge and the last sync date on success", async () => {
-    vi.spyOn(cronStatusMock, "getCronStatus").mockResolvedValue({
+    vi.spyOn(cronStatusService, "getCronStatus").mockResolvedValue({
       status: "ONLINE",
       lastSyncAt: "2026-10-02T03:00:00",
       lastError: null,
@@ -35,7 +35,7 @@ describe("CloudAutomationStatusCard", () => {
   });
 
   it("shows the error badge and the last registered error when the process failed", async () => {
-    vi.spyOn(cronStatusMock, "getCronStatus").mockResolvedValue({
+    vi.spyOn(cronStatusService, "getCronStatus").mockResolvedValue({
       status: "ERROR",
       lastSyncAt: "2026-10-01T03:00:00",
       lastError: "Sin conexión con el almacenamiento en la nube",
@@ -50,7 +50,7 @@ describe("CloudAutomationStatusCard", () => {
   });
 
   it("shows an error message when the request to check the status fails", async () => {
-    vi.spyOn(cronStatusMock, "getCronStatus").mockRejectedValue(
+    vi.spyOn(cronStatusService, "getCronStatus").mockRejectedValue(
       new Error("network error"),
     );
     const wrapper = mount(CloudAutomationStatusCard);
@@ -62,7 +62,7 @@ describe("CloudAutomationStatusCard", () => {
   });
 
   it("shows an empty-state message when there is no status data", async () => {
-    vi.spyOn(cronStatusMock, "getCronStatus").mockResolvedValue(null);
+    vi.spyOn(cronStatusService, "getCronStatus").mockResolvedValue(null);
     const wrapper = mount(CloudAutomationStatusCard);
     await flushPromises();
 

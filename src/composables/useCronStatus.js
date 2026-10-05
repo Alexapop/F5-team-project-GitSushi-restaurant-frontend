@@ -1,6 +1,6 @@
 // src/composables/useCronStatus.js
 import { ref } from 'vue'
-import { getCronStatus } from '../mocks/cronStatus.mock'
+import { getCronStatus } from '../services/cronStatus.service'
 
 // Responsabilidad: estado del "Cloud Automation Service" (datos, carga y error de red).
 
