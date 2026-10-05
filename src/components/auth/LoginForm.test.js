@@ -8,10 +8,11 @@ const pushMock = vi.fn()
 const routeMock = { query: {} }
 
 vi.mock('vue-router', () => ({
-  useRouter: () => ({
+    useRouter: () => ({
     push: pushMock,
-    useRoute: () => routeMock
   }),
+  useRoute: () => routeMock,
+  
   RouterLink: {
     template: '<a><slot /></a>',
   },

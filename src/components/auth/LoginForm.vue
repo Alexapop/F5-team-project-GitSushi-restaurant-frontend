@@ -82,15 +82,13 @@ const handleSubmit = async () => {
       </RouterLink>
     </div>
 <p
-
-<p
   v-if="isJustRegistered && !errorMessage"
   role="status"
   class="text-sm text-secondary"
 >
   Cuenta creada. Ya puedes iniciar sesión.
 </p>
-
+<p
   v-if="errorMessage"
   role="alert"
   class="text-sm text-error"
