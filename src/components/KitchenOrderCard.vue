@@ -10,6 +10,9 @@ const props = defineProps({
   },
 })
 
+// Avisa a la vista de que el estado ha cambiado para que refresque las métricas.
+const emit = defineEmits(['status-changed'])
+
 const currentStatus = ref(props.order.status ?? 'PROCESSING')
 const isUpdating = ref(false)
 const error = ref(null)
@@ -25,6 +28,8 @@ async function changeStatus(status) {
   try {
     await updateKitchenOrderStatus(props.order.id, status)
     currentStatus.value = status
+    emit('status-changed', { id: props.order.id, status })
+
   } catch {
     error.value = 'No se ha podido actualizar el estado.'
   } finally {
