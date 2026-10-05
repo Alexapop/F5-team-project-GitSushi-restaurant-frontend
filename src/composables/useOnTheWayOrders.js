@@ -30,15 +30,20 @@ export function useOnTheWayOrders() {
     }
   }
 
+  // Devuelve true/false para que quien la llama (el componente) sepa si el
+  // pedido se marcó de verdad como entregado, y pueda avisar de que hay
+  // uno nuevo en "Entregados hoy".
   async function markDelivered(order) {
     try {
       await markOrderAsDelivered(order.id, {
         cashCollected: order.paymentMethod === CASH_ON_DELIVERY,
       })
       orders.value = orders.value.filter((item) => item.id !== order.id)
+      return true
     } catch (err) {
       error.value = 'No se ha podido marcar el pedido como entregado.'
       console.error('[useOnTheWayOrders] Error al marcar como entregado:', err)
+      return false
     }
   }
 

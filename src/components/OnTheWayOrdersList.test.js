@@ -71,6 +71,7 @@ describe("OnTheWayOrdersList", () => {
       cashCollected: false,
     });
     expect(wrapper.text()).toContain("No hay pedidos en tránsito ahora mismo.");
+    expect(wrapper.emitted("order-delivered")).toHaveLength(1);
   });
 
   it("opens the green confirm dialog with the amount and order before a cash delivery", async () => {
@@ -90,6 +91,7 @@ describe("OnTheWayOrdersList", () => {
     expect(dialog.text()).toContain("#13");
     expect(dialog.find(".confirm-dialog__button--success").text()).toBe("Sí, cobrado");
     expect(deliveryService.markOrderAsDelivered).not.toHaveBeenCalled();
+    expect(wrapper.emitted("order-delivered")).toBeUndefined();
   });
 
   it("marks the cash order as delivered when the cash is confirmed", async () => {
@@ -109,6 +111,7 @@ describe("OnTheWayOrdersList", () => {
       cashCollected: true,
     });
     expect(wrapper.find(".confirm-dialog").exists()).toBe(false);
+    expect(wrapper.emitted("order-delivered")).toHaveLength(1);
   });
 
   it("does not mark the order as delivered when the cash confirmation is cancelled", async () => {
@@ -127,6 +130,24 @@ describe("OnTheWayOrdersList", () => {
     expect(deliveryService.markOrderAsDelivered).not.toHaveBeenCalled();
     expect(wrapper.find(".confirm-dialog").exists()).toBe(false);
     expect(wrapper.text()).toContain("Pedido #13");
+    expect(wrapper.emitted("order-delivered")).toBeUndefined();
+  });
+
+  it("does not emit order-delivered when marking as delivered fails", async () => {
+    vi.spyOn(ordersService, "getOrdersByStatus").mockResolvedValue([
+      { id: 12, paymentMethod: "ONLINE_CARD", total: 21.5 },
+    ]);
+    vi.spyOn(deliveryService, "markOrderAsDelivered").mockRejectedValue(
+      new Error("network error"),
+    );
+
+    const wrapper = mount(OnTheWayOrdersList);
+    await flushPromises();
+
+    await wrapper.find(".on-the-way-orders__deliver-btn").trigger("click");
+    await flushPromises();
+
+    expect(wrapper.emitted("order-delivered")).toBeUndefined();
   });
 
   it('refetches the orders when the exposed refresh method is called', async () => {
