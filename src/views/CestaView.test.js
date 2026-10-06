@@ -1,0 +1,92 @@
+import { describe, it, expect, vi } from 'vitest'
+import { mount } from '@vue/test-utils'
+import { createRouter, createWebHistory } from 'vue-router'
+import { createPinia, setActivePinia } from 'pinia'
+import CestaView from './CestaView.vue'
+import CartSummary from '../components/CartSummary.vue'
+import ChannelSelector from '../components/ChannelSelector.vue'
+import PaymentSelector from '../components/PaymentSelector.vue'
+import ChefNoteField from '../components/ChefNoteField.vue'
+import OrderConfirmation from '../components/OrderConfirmation.vue'
+import { useCartStore } from '../stores/cart'
+
+// ChannelSelector intenta detectar la mesa al montarse. Sin este mock el test
+// hace una petición HTTP real que falla y escribe en consola cuando el test ya
+// ha terminado, lo que provoca un "Unhandled Rejection" en Vitest.
+vi.mock('../services/tables.service', () => ({
+  getLinkedTable: vi.fn().mockRejectedValue(new Error('No linked table in tests')),
+}))
+
+const routes = [
+  { path: '/', name: 'carta', component: { template: '<div>Carta</div>' } },
+  { path: '/cesta', name: 'cesta', component: CestaView },
+]
+
+async function mountCestaView() {
+  const router = createRouter({ history: createWebHistory(), routes })
+  router.push('/cesta')
+  await router.isReady()
+
+  localStorage.clear()
+  setActivePinia(createPinia())
+  const cartStore = useCartStore()
+
+  const wrapper = mount(CestaView, {
+    global: { plugins: [router] },
+  })
+
+  return { wrapper, cartStore }
+}
+
+describe('CestaView', () => {
+  it('renders the page title', async () => {
+    const { wrapper } = await mountCestaView()
+
+    expect(wrapper.find('.cesta-view__title').text()).toBe('Tu cesta')
+  })
+
+  it('renders the CartSummary widget', async () => {
+    const { wrapper } = await mountCestaView()
+
+    expect(wrapper.findComponent(CartSummary).exists()).toBe(true)
+  })
+
+  it('renders the ChannelSelector widget', async () => {
+    const { wrapper } = await mountCestaView()
+
+    expect(wrapper.findComponent(ChannelSelector).exists()).toBe(true)
+  })
+
+  it('renders the PaymentSelector widget', async () => {
+    const { wrapper } = await mountCestaView()
+
+    expect(wrapper.findComponent(PaymentSelector).exists()).toBe(true)
+  })
+
+  it('renders the ChefNoteField widget', async () => {
+    const { wrapper } = await mountCestaView()
+
+    expect(wrapper.findComponent(ChefNoteField).exists()).toBe(true)
+  })
+
+  it('renders the OrderConfirmation widget', async () => {
+    const { wrapper } = await mountCestaView()
+
+    expect(wrapper.findComponent(OrderConfirmation).exists()).toBe(true)
+  })
+
+  it('shows the empty-cart state when there are no products', async () => {
+    const { wrapper } = await mountCestaView()
+
+    expect(wrapper.text()).toContain('Tu cesta está vacía')
+  })
+
+  it('shows the cart contents when the store has products', async () => {
+    const { wrapper, cartStore } = await mountCestaView()
+    cartStore.addProduct({ id: 1, name: 'Salmon Roll', price: 10 })
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.text()).toContain('Salmon Roll')
+  })
+
+})

@@ -1,9 +1,13 @@
 <template>
-  <main class="carta-view">
+  <Hero />
+
+  <main id="productos-carta" class="carta-view">
     <h1 class="carta-view__title">Nuestra carta</h1>
 
-    <p v-if="isLoading" class="carta-view__status">Cargando la carta...</p>
-    <p v-else-if="error" class="carta-view__status carta-view__status--error">{{ error }}</p>
+    <LoadingSpinner v-if="isLoading" label="Cargando la carta..." />
+    <p v-else-if="error" class="carta-view__status carta-view__status--error">
+      {{ error }}
+    </p>
 
     <template v-else>
       <p v-if="products.length === 0" class="carta-view__status">
@@ -15,6 +19,7 @@
           v-for="product in products"
           :key="product.id"
           :product="product"
+                    :readonly="isReadOnlyMenu"
           @add-to-cart="handleAddToCart"
         />
       </div>
@@ -23,26 +28,60 @@
         v-if="totalPages > 1"
         :current-page="currentPage"
         :total-pages="totalPages"
-        @change-page="goToPage"
+        @change-page="handleChangePage"
       />
     </template>
   </main>
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
-import { useProducts } from '../composables/useProducts'
-import ProductCard from '../components/ProductCard.vue'
-import PaginationControl from '../components/PaginationControl.vue'
+import { computed, onMounted } from "vue";
+import { useProducts } from "../composables/useProducts";
+import { useCartStore } from "../stores/cart";
+import { useAuthStore } from "../stores/auth";
+import { ROLES } from "../constants/roles";
+import ProductCard from "../components/ProductCard.vue";
+import PaginationControl from "../components/PaginationControl.vue";
+import Hero from "../components/Hero.vue";
+import LoadingSpinner from "../components/LoadingSpinner.vue";
 
-const { products, isLoading, error, currentPage, totalPages, fetchProducts, goToPage } = useProducts()
+const {
+  products,
+  isLoading,
+  error,
+  currentPage,
+  totalPages,
+  fetchProducts,
+  goToPage,
+} = useProducts();
+const cartStore = useCartStore();
+const authStore = useAuthStore();
+
+// Solo el invitado y el cliente pueden hacer pedidos (los mismos que entran en /cesta).
+// Admin, cocina y reparto ven la carta sin cantidad ni botón "Añadir".
+const ROLES_THAT_CAN_ORDER = [ROLES.GUEST, ROLES.CUSTOMER];
+const isReadOnlyMenu = computed(
+  () => !ROLES_THAT_CAN_ORDER.includes(authStore.role),
+);
 
 onMounted(() => {
-  fetchProducts(1)
-})
+  fetchProducts(1);
+});
 
-function handleAddToCart(payload) {
-  console.log('[CartaView] add-to-cart', payload)
+function handleAddToCart({ product, quantity }) {
+  cartStore.addProduct(product);
+  for (let i = 1; i < quantity; i++) {
+    cartStore.incrementQuantity(product.id);
+  }
+}
+
+// Al cambiar de página, subimos la vista al principio: si no, el usuario
+// se queda abajo del todo, justo donde ha pulsado el control de
+// paginación, sin ver ninguno de los productos de la página nueva hasta
+// hacer scroll manualmente hacia arriba.
+function handleChangePage(page) {
+  goToPage(page);
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 </script>
 
@@ -58,7 +97,7 @@ function handleAddToCart(payload) {
 }
 
 .carta-view__status {
-  @apply text-center text-text py-12;
+  @apply text-center text-on-surface-variant py-12;
 }
 
 .carta-view__status--error {

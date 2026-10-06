@@ -21,3 +21,17 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Variables de entorno
+.env
+.env.*
+!.env.example
+!.env.e2e.example
+
+# Certificados SSL locales (cada uno genera los suyos con mkcert)
+certs/
+*.pem
+
+# Resultados de Playwright (E2E)
+test-results/
+playwright-report/

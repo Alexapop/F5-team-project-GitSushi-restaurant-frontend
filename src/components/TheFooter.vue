@@ -5,7 +5,7 @@
 // The GitHub icon + "Name (@username)" pattern below is the one to reuse.
 const leftDevs = [
   { name: 'Andrea', username: 'andreaperezgon' },
-  { name: 'Danil', username: 'danielmuntyanu' },
+  { name: 'Daniel', username: 'danielmuntyanu' },
   { name: 'Ioana', username: 'Alexapop' },
   { name: 'Jose', username: 'Josecgh' },
 ]
@@ -62,7 +62,7 @@ function githubUrl(username) {
         <span class="text-secondary text-xs font-bold uppercase tracking-widest">
           devs
         </span>
-        <div class="flex flex-col sm:flex-row gap-4 sm:gap-5">
+        <div class="flex flex-row gap-4 sm:gap-5">
           <ul v-for="(column, index) in devColumns" :key="index" class="flex flex-col gap-2">
             <li
               v-for="dev in column"
