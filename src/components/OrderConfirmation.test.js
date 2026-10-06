@@ -9,6 +9,7 @@ import { useExclusiveOffersStore } from "../stores/exclusiveOffers";
 import * as ordersService from "../services/orders.service";
 import * as paymentsService from "../services/payments.service";
 import { useLastOrderStore } from "../stores/lastOrder";
+import { useAuthStore } from "../stores/auth";
 
 const routes = [
   { path: "/", name: "carta", component: { template: "<div>Carta</div>" } },
@@ -23,7 +24,9 @@ const routes = [
     component: { template: "<div>Mi pedido</div>" },
   },
 ];
-
+// Los pedidos en sala necesitan mesa: por defecto los tests tienen una ya indicada.
+const TABLE_NUMBER = 3;
+const DELIVERY_ADDRESS = { street: "Calle Mayor 1", city: "Avilés", postalCode: "33400" };
 async function mountOrderConfirmation() {
   const router = createRouter({ history: createWebHistory(), routes });
   router.push("/cesta");
@@ -32,6 +35,7 @@ async function mountOrderConfirmation() {
   setActivePinia(createPinia());
   const cartStore = useCartStore();
   const checkoutStore = useCheckoutStore();
+  checkoutStore.setTableNumber(TABLE_NUMBER);
 
   const wrapper = mount(OrderConfirmation, {
     global: { plugins: [router] },
@@ -66,6 +70,62 @@ describe("OrderConfirmation", () => {
     expect(
       wrapper.find(".order-confirmation__button").attributes("disabled"),
     ).toBeDefined();
+  });
+
+    it("disables the confirm button and asks for the table when dining in without one", async () => {
+    const { wrapper, cartStore, checkoutStore } =
+      await mountOrderConfirmation();
+    cartStore.addProduct({ id: 1, name: "Salmon Roll", price: 10 });
+    checkoutStore.setPaymentMethod("cashier");
+    checkoutStore.setTableNumber(null);
+    await flushPromises();
+
+    expect(
+      wrapper.find(".order-confirmation__button").attributes("disabled"),
+    ).toBeDefined();
+    expect(wrapper.find(".order-confirmation__hint").text()).toBe(
+      "Indica tu número de mesa para continuar.",
+    );
+  });
+
+  it("does not ask for a table for home delivery orders", async () => {
+    const { wrapper, checkoutStore } = await mountOrderConfirmation();
+    checkoutStore.setChannel("domicilio");
+    checkoutStore.setTableNumber(null);
+    await flushPromises();
+
+    expect(wrapper.find(".order-confirmation__hint").exists()).toBe(false);
+  });
+
+  it("disables the confirm button for home delivery until a payment method is chosen", async () => {
+    const { wrapper, cartStore, checkoutStore } = await mountOrderConfirmation();
+    cartStore.addProduct({ id: 1, name: "Salmon Roll", price: 10 });
+    checkoutStore.setChannel("domicilio");
+    checkoutStore.setAddress(DELIVERY_ADDRESS);
+    await flushPromises();
+
+    expect(
+      wrapper.find(".order-confirmation__button").attributes("disabled"),
+    ).toBeDefined();
+  });
+
+  it("asks for the missing address fields and does not send a home delivery order without them", async () => {
+    const createOrderSpy = vi.spyOn(ordersService, "createOrder");
+    const { wrapper, cartStore, checkoutStore } = await mountOrderConfirmation();
+    cartStore.addProduct({ id: 1, name: "Salmon Roll", price: 10 });
+    checkoutStore.setChannel("domicilio");
+    checkoutStore.setPaymentMethod("cashOnDelivery");
+    checkoutStore.setAddress({ street: "Calle Uría 10" });
+    await flushPromises();
+
+    await wrapper.find(".order-confirmation__button").trigger("click");
+    await flushPromises();
+
+    expect(createOrderSpy).not.toHaveBeenCalled();
+    expect(checkoutStore.showAddressErrors).toBe(true);
+    expect(wrapper.find(".order-confirmation__error").text()).toBe(
+      "Completa la dirección de entrega para confirmar el pedido.",
+    );
   });
 
   it("enables the confirm button once a dine-in payment method is selected", async () => {
@@ -116,6 +176,16 @@ describe("OrderConfirmation", () => {
     expect(totalText).toContain("13,50");
   });
 
+    it("does not charge the home delivery fee while the cart is empty", async () => {
+    const { wrapper, checkoutStore } = await mountOrderConfirmation();
+    checkoutStore.setChannel("domicilio");
+    await flushPromises();
+
+    const totalText = wrapper.find(".order-confirmation__row--total").text();
+    expect(totalText).toContain("0,00");
+    expect(wrapper.text()).not.toContain("Gastos de envío");
+  });
+
   it("sends the mapped cart items, channel and payment method, then empties the cart", async () => {
     vi.spyOn(ordersService, "createOrder").mockResolvedValue({
       id: 99,
@@ -132,11 +202,12 @@ describe("OrderConfirmation", () => {
     await wrapper.find(".order-confirmation__button").trigger("click");
     await flushPromises();
 
-    expect(ordersService.createOrder).toHaveBeenCalledWith({
+       expect(ordersService.createOrder).toHaveBeenCalledWith({
       items: [{ productId: 1, quantity: 1 }],
       chefNote: "Sin wasabi",
       channel: "sala",
       paymentMethod: "CASH_ONSITE",
+      tableNumber: TABLE_NUMBER,
     });
     expect(lastOrderStore.order).toEqual({
       id: 99,
@@ -247,7 +318,7 @@ describe("OrderConfirmation", () => {
       window.location = originalLocation;
     });
 
-    it("creates a Stripe checkout session and redirects to it, without emptying the cart yet", async () => {
+    it.each([null, { email: "customer@example.com", roles: ["ROLE_CUSTOMER"] }])("creates a Stripe checkout session and redirects without emptying the cart, with user %j", async (user) => {
       vi.spyOn(ordersService, "createOrder").mockResolvedValue({
         id: 42,
         paymentStatus: "PENDING_ONLINE_PAYMENT",
@@ -258,6 +329,7 @@ describe("OrderConfirmation", () => {
 
       const { wrapper, cartStore, checkoutStore, router } =
         await mountOrderConfirmation();
+      useAuthStore().user = user;
       cartStore.addProduct({ id: 1, name: "Salmon Roll", price: 10 });
       checkoutStore.setChannel("domicilio");
       checkoutStore.setPaymentMethod("onlineCard");
@@ -279,7 +351,7 @@ describe("OrderConfirmation", () => {
 
       expect(paymentsService.createCheckoutSession).toHaveBeenCalledWith({
         orderId: 42,
-        email: undefined,
+        email: user?.email,
       });
       expect(window.location.href).toBe("https://stripe.test/pay/sess_42");
       // El pago todavía no está confirmado: la cesta se mantiene intacta y
@@ -304,6 +376,7 @@ describe("OrderConfirmation", () => {
       cartStore.addProduct({ id: 1, name: "Salmon Roll", price: 10 });
       checkoutStore.setChannel("domicilio");
       checkoutStore.setPaymentMethod("cashOnDelivery");
+      checkoutStore.setAddress(DELIVERY_ADDRESS);
       await flushPromises();
 
       await wrapper.find(".order-confirmation__button").trigger("click");
@@ -313,4 +386,23 @@ describe("OrderConfirmation", () => {
       expect(cartStore.isEmpty).toBe(true);
     });
   });
+
+it("sends the table number when confirming a dine-in order with a table selected", async () => {
+  vi.spyOn(ordersService, "createOrder").mockResolvedValue({
+    id: 99,
+    paymentStatus: "PENDING_CASH",
+  });
+  const { wrapper, cartStore, checkoutStore } = await mountOrderConfirmation();
+  cartStore.addProduct({ id: 1, name: "Salmon Roll", price: 10 });
+  checkoutStore.setPaymentMethod("cashier");
+  checkoutStore.setTableNumber(5);
+  await flushPromises();
+
+  await wrapper.find(".order-confirmation__button").trigger("click");
+  await flushPromises();
+
+  expect(ordersService.createOrder).toHaveBeenCalledWith(
+    expect.objectContaining({ tableNumber: 5 }),
+  );
+});
 })

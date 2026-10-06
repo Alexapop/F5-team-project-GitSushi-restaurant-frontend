@@ -3,15 +3,21 @@ import { ref } from "vue";
 import DeliveryMetrics from "../components/DeliveryMetrics.vue";
 import PendingDeliveriesList from "../components/PendingDeliveriesList.vue";
 import OnTheWayOrdersList from "../components/OnTheWayOrdersList.vue";
+import DeliveredTodayList from "../components/DeliveredTodayList.vue";
 import { useDeliveryMetrics } from "../composables/useDeliveryMetrics";
 
 const { metrics, isLoading, isRefreshing, error, isEmpty, refresh } =
   useDeliveryMetrics();
 
 const onTheWayOrdersListRef = ref(null);
+const deliveredTodayListRef = ref(null);
 
 function handleOrderAccepted() {
   onTheWayOrdersListRef.value?.refresh();
+}
+
+function handleOrderDelivered() {
+  deliveredTodayListRef.value?.refresh();
 }
 </script>
 
@@ -50,7 +56,12 @@ function handleOrderAccepted() {
 
     <PendingDeliveriesList @order-accepted="handleOrderAccepted" />
 
-    <OnTheWayOrdersList ref="onTheWayOrdersListRef" />
+    <OnTheWayOrdersList
+      ref="onTheWayOrdersListRef"
+      @order-delivered="handleOrderDelivered"
+    />
+
+    <DeliveredTodayList ref="deliveredTodayListRef" />
   </main>
 </template>
 

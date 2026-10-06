@@ -6,6 +6,9 @@ import PasswordInput from '../PasswordInput.vue'
 
 const router = useRouter()
 
+// El login lee este parámetro para confirmar que la cuenta se ha creado.
+const REGISTERED_QUERY = { registered: '1' }
+
 const firstName = ref('')
 const lastName = ref('')
 const email = ref('')
@@ -39,7 +42,7 @@ const handleSubmit = async () => {
       city: city.value,
     })
 
-    await router.push('/login')
+    await router.push({ name: 'login', query: REGISTERED_QUERY })
   } catch (error) {
     errorMessage.value =
       error.response?.data?.message ||

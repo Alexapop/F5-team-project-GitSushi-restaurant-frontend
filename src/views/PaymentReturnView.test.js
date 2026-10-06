@@ -134,5 +134,27 @@ describe("PaymentReturnView", () => {
       });
       expect(window.location.href).toBe("https://stripe.test/pay/sess_new");
     });
+
+    it("retries the payment of the order saved before leaving for Stripe", async () => {
+      vi.spyOn(paymentsService, "createCheckoutSession").mockResolvedValue({
+        checkoutUrl: "https://stripe.test/pay/sess_new",
+      });
+      // Al volver de Stripe la app arranca de cero: solo queda lo guardado en localStorage.
+      localStorage.setItem(
+        "gitsushi-last-order",
+        JSON.stringify({ id: 42, token: "abc-123", savedAt: Date.now() }),
+      );
+
+      const { wrapper } = await mountPaymentReturnView("/pago/confirmar");
+      await flushPromises();
+
+      await wrapper.find(".payment-return__button").trigger("click");
+      await flushPromises();
+
+      expect(paymentsService.createCheckoutSession).toHaveBeenCalledWith({
+        orderId: 42,
+        email: undefined,
+      });
+    });
   });
 });

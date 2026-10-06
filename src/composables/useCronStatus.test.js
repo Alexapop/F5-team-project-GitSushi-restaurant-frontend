@@ -1,7 +1,7 @@
 // src/composables/useCronStatus.test.js
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { useCronStatus } from './useCronStatus'
-import * as cronStatusMock from '../mocks/cronStatus.mock'
+import * as cronStatusService from '../services/cronStatus.service'
 
 describe('useCronStatus', () => {
   beforeEach(() => {
@@ -9,7 +9,7 @@ describe('useCronStatus', () => {
   })
 
   it('sets isLoading to true while fetching and false when finished', async () => {
-    vi.spyOn(cronStatusMock, 'getCronStatus').mockResolvedValue({
+    vi.spyOn(cronStatusService, 'getCronStatus').mockResolvedValue({
       status: 'ONLINE',
       lastSyncAt: '2026-10-02T03:00:00',
       lastError: null,
@@ -24,7 +24,7 @@ describe('useCronStatus', () => {
   })
 
   it('stores the fetched status on success', async () => {
-    vi.spyOn(cronStatusMock, 'getCronStatus').mockResolvedValue({
+    vi.spyOn(cronStatusService, 'getCronStatus').mockResolvedValue({
       status: 'ONLINE',
       lastSyncAt: '2026-10-02T03:00:00',
       lastError: null,
@@ -41,7 +41,7 @@ describe('useCronStatus', () => {
   })
 
   it('stores an error message when the request fails', async () => {
-    vi.spyOn(cronStatusMock, 'getCronStatus').mockRejectedValue(new Error('network error'))
+    vi.spyOn(cronStatusService, 'getCronStatus').mockRejectedValue(new Error('network error'))
     const { loadError, fetchStatus } = useCronStatus()
 
     await fetchStatus()

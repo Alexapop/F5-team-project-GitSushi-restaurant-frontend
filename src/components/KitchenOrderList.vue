@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import KitchenOrderCard from './KitchenOrderCard.vue'
+import KitchenAttendedOrders from './KitchenAttendedOrders.vue'
 import LoadingSpinner from './LoadingSpinner.vue'
 
 const props = defineProps({
@@ -18,7 +19,15 @@ const props = defineProps({
   }
 })
 
+
+// Reenvía a la vista el cambio de estado de una comanda.
+const emit = defineEmits(['status-changed'])
+
 const selectedChannel = ref('ALL')
+
+// "Atendidas" no es un canal: muestra las comandas ya terminadas en lugar de las activas.
+const ATTENDED_FILTER = 'ATTENDED'
+const isShowingAttended = computed(() => selectedChannel.value === ATTENDED_FILTER)
 
 const filteredOrders = computed(() => {
   if (selectedChannel.value === 'ALL') {
@@ -34,7 +43,7 @@ const filteredOrders = computed(() => {
 <template>
   <section>
     <h2 class="mb-4">
-      Comandas activas
+      {{ isShowingAttended ? 'Comandas atendidas' : 'Comandas activas' }}
     </h2>
     <div class="mb-4 flex flex-wrap gap-2">
   <button
@@ -52,11 +61,11 @@ const filteredOrders = computed(() => {
 <button
   type="button"
   :class="
-    selectedChannel === 'IN_STORE'
+    selectedChannel === 'ONSITE'
       ? 'btn-primary'
       : 'btn-secondary'
   "
-  @click="selectedChannel = 'IN_STORE'"
+  @click="selectedChannel = 'ONSITE'"
 >
   En Sala
 </button>
@@ -64,18 +73,28 @@ const filteredOrders = computed(() => {
 <button
   type="button"
   :class="
-    selectedChannel === 'DELIVERY'
+    selectedChannel === 'ONLINE'
       ? 'btn-primary'
       : 'btn-secondary'
   "
-  @click="selectedChannel = 'DELIVERY'"
+  @click="selectedChannel = 'ONLINE'"
 >
   A Domicilio
 </button>
+
+<button
+  type="button"
+  :class="isShowingAttended ? 'btn-primary' : 'btn-secondary'"
+  @click="selectedChannel = ATTENDED_FILTER"
+>
+  Atendidas
+</button>
 </div>
 
+    <KitchenAttendedOrders v-if="isShowingAttended" />
+
     <LoadingSpinner
-      v-if="isLoading"
+      v-else-if="isLoading"
       class="card"
       label="Cargando comandas..."
     />
@@ -103,6 +122,7 @@ const filteredOrders = computed(() => {
   v-for="order in filteredOrders"
   :key="order.id"
   :order="order"
+  @status-changed="emit('status-changed', $event)"
 />
     </div>
   </section>

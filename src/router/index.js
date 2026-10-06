@@ -24,6 +24,13 @@ const routes = [
     component: () => import("../views/MiPedidoView.vue"),
     meta: { roles: [GUEST, CUSTOMER] },
   },
+    {
+    // Enlace del email "Tu pedido va en camino": /tickets/:id?token=...
+    path: "/tickets/:id",
+    name: "ticket",
+    component: () => import("../views/MiPedidoView.vue"),
+    meta: { roles: [GUEST, CUSTOMER] },
+  },
   {
     path: "/success",
     name: "payment-success",

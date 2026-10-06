@@ -6,6 +6,7 @@ import {
   getKitchenOrders,
   getKitchenMetrics,
 } from '../services/kitchen.service'
+import { useAutoRefresh } from '../composables/useAutoRefresh'
 
 const orders = ref([])
 const metrics = ref(null)
@@ -16,8 +17,11 @@ const isLoadingMetrics = ref(true)
 const ordersError = ref(null)
 const metricsError = ref(null)
 
+// Solo "cargando" la primera vez: al refrescar se mantienen las comandas en pantalla.
+let hasLoadedOrders = false
+
 async function loadOrders() {
-  isLoadingOrders.value = true
+  isLoadingOrders.value = !hasLoadedOrders
   ordersError.value = null
 
   try {
@@ -26,11 +30,13 @@ async function loadOrders() {
     ordersError.value = 'No se han podido cargar las comandas.'
   } finally {
     isLoadingOrders.value = false
+    hasLoadedOrders = true
   }
 }
 
 async function loadMetrics() {
-  isLoadingMetrics.value = true
+  // Solo "cargando" la primera vez: al refrescar se mantienen las métricas en pantalla.
+  isLoadingMetrics.value = metrics.value === null
   metricsError.value = null
 
   try {
@@ -43,6 +49,12 @@ async function loadMetrics() {
 }
 
 onMounted(() => {
+  loadOrders()
+  loadMetrics()
+})
+
+// Las comandas nuevas y los cambios de otros puestos aparecen sin recargar.
+useAutoRefresh(() => {
   loadOrders()
   loadMetrics()
 })
@@ -61,6 +73,7 @@ onMounted(() => {
         :orders="orders"
         :is-loading="isLoadingOrders"
         :error="ordersError"
+        @status-changed="loadMetrics"
       />
     </div>
   </main>

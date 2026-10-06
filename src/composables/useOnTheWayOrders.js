@@ -16,8 +16,11 @@ export function useOnTheWayOrders() {
   // Pedido en efectivo pendiente de confirmar el cobro.
   const orderToConfirm = ref(null)
 
+  // Solo "cargando" la primera vez: al refrescar se mantienen los datos en pantalla.
+  let hasLoaded = false
+
   async function fetchOrders() {
-    isLoading.value = true
+    isLoading.value = !hasLoaded
     error.value = null
 
     try {
@@ -27,18 +30,24 @@ export function useOnTheWayOrders() {
       console.error('[useOnTheWayOrders] Error al cargar los pedidos:', err)
     } finally {
       isLoading.value = false
+      hasLoaded = true
     }
   }
 
+  // Devuelve true/false para que quien la llama (el componente) sepa si el
+  // pedido se marcó de verdad como entregado, y pueda avisar de que hay
+  // uno nuevo en "Entregados hoy".
   async function markDelivered(order) {
     try {
       await markOrderAsDelivered(order.id, {
         cashCollected: order.paymentMethod === CASH_ON_DELIVERY,
       })
       orders.value = orders.value.filter((item) => item.id !== order.id)
+      return true
     } catch (err) {
       error.value = 'No se ha podido marcar el pedido como entregado.'
       console.error('[useOnTheWayOrders] Error al marcar como entregado:', err)
+      return false
     }
   }
 

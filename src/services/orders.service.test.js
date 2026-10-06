@@ -130,4 +130,22 @@ describe('orders.service', () => {
     expect(api.get).toHaveBeenCalledWith('/api/v1/orders', { params: { status: 'ONTHEWAY' } })
     expect(result).toEqual(orders)
   })
+
+it('sends the table number for a dine-in order when provided', async () => {
+  api.post.mockResolvedValue({ data: { id: 1 } })
+
+  await createOrder({
+    items: [],
+    chefNote: '',
+    channel: 'sala',
+    paymentMethod: 'CASH_ONSITE',
+    tableNumber: 5,
+  })
+
+  expect(api.post).toHaveBeenCalledWith(
+    '/api/v1/orders',
+    expect.objectContaining({ tableNumber: 5 }),
+    expect.anything(),
+  )
+})
 })

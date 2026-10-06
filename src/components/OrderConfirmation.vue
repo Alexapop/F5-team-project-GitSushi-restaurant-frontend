@@ -9,6 +9,7 @@ import { useAuthStore } from "../stores/auth";
 import { createOrder } from "../services/orders.service";
 import { createCheckoutSession } from "../services/payments.service";
 import { HOME_DELIVERY_FEE } from "../constants/delivery";
+import { getMissingAddressFields } from "../utils/deliveryAddress";
 import {
   getBackendPaymentMethod,
   getPaymentStatusLabel,
@@ -23,21 +24,32 @@ const lastOrderStore = useLastOrderStore();
 const offersStore = useExclusiveOffersStore();
 const authStore = useAuthStore();
 
+const ADDRESS_INCOMPLETE_MESSAGE =
+  "Completa la dirección de entrega para confirmar el pedido.";
+
 const isSubmitting = ref(false);
 const errorMessage = ref(null);
 const paymentStatusMessage = ref(null);
 
+// En sala el backend necesita la mesa: si no se detectó, hay que escribirla a mano.
+const needsTableNumber = computed(
+  () => checkoutStore.channel === "sala" && !checkoutStore.tableNumber,
+);
+
 const canConfirmOrder = computed(() => {
   if (cartStore.isEmpty) return false;
-  if (checkoutStore.channel === "sala" && !checkoutStore.paymentMethod)
-    return false;
+  if (needsTableNumber.value) return false;
+  // Sala y domicilio necesitan un método de pago (el backend lo exige).
+  if (!checkoutStore.paymentMethod) return false;
   return true;
 });
 
-// El envío solo se cobra en pedidos a domicilio; el backend aplica el mismo
-// cargo fijo al calcular el total real del pedido.
+// El envío solo se cobra en pedidos a domicilio con productos; el backend aplica
+// el mismo cargo fijo al calcular el total real del pedido.
 const homeDeliveryFee = computed(() =>
-  checkoutStore.channel === "domicilio" ? HOME_DELIVERY_FEE : 0,
+  checkoutStore.channel === "domicilio" && !cartStore.isEmpty
+    ? HOME_DELIVERY_FEE
+    : 0,
 );
 
 const orderTotal = computed(() => cartStore.total + homeDeliveryFee.value);
@@ -69,7 +81,21 @@ function isHomeDeliveryOnlineCard() {
   );
 }
 
+// La dirección se comprueba al pulsar el botón para poder decir qué falta.
+function isHomeDeliveryAddressIncomplete() {
+  return (
+    checkoutStore.channel === "domicilio" &&
+    getMissingAddressFields(checkoutStore.address).length > 0
+  );
+}
+
 async function confirmOrder() {
+  if (isHomeDeliveryAddressIncomplete()) {
+    checkoutStore.revealAddressErrors();
+    errorMessage.value = ADDRESS_INCOMPLETE_MESSAGE;
+    return;
+  }
+
   isSubmitting.value = true;
   errorMessage.value = null;
 
@@ -172,6 +198,10 @@ async function confirmOrder() {
       pedido...
     </p>
 
+    <p v-if="needsTableNumber" class="order-confirmation__hint">
+      Indica tu número de mesa para continuar.
+    </p>
+
     <button
       type="button"
       class="order-confirmation__button"
@@ -208,6 +238,10 @@ async function confirmOrder() {
 
 .order-confirmation__row--total {
   @apply text-base font-semibold text-on-surface;
+}
+
+.order-confirmation__hint {
+  @apply text-sm text-on-surface-variant;
 }
 
 .order-confirmation__error {

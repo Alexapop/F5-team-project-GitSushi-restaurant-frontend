@@ -1,7 +1,10 @@
 <script setup>
 import { onMounted } from 'vue'
 import { useOnTheWayOrders } from '../composables/useOnTheWayOrders'
+import { useAutoRefresh } from '../composables/useAutoRefresh'
 import ConfirmDialog from './ConfirmDialog.vue'
+
+const emit = defineEmits(['order-delivered'])
 
 const {
   orders,
@@ -15,8 +18,22 @@ const {
 } = useOnTheWayOrders()
 
 onMounted(fetchOrders)
+useAutoRefresh(fetchOrders)
 
 defineExpose({ refresh: fetchOrders })
+
+// Envuelve deliverOrder/confirmCashCollected para avisar al padre (y así
+// refrescar "Entregados hoy") solo cuando el pedido se ha marcado de
+// verdad como entregado, nunca si ha fallado.
+async function handleDeliver(order) {
+  const delivered = await deliverOrder(order)
+  if (delivered) emit('order-delivered')
+}
+
+async function handleConfirmCashCollected() {
+  const delivered = await confirmCashCollected()
+  if (delivered) emit('order-delivered')
+}
 
 const formatCurrency = (value) =>
   value.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })
@@ -60,7 +77,7 @@ const PAYMENT_METHOD_LABELS = {
         <button
           type="button"
           class="on-the-way-orders__deliver-btn"
-          @click="deliverOrder(order)"
+          @click="handleDeliver(order)"
         >
           Marcar como ENTREGADO
         </button>
@@ -72,7 +89,7 @@ const PAYMENT_METHOD_LABELS = {
       title="Confirmar cobro"
       confirm-label="Sí, cobrado"
       variant="success"
-      @confirm="confirmCashCollected"
+      @confirm="handleConfirmCashCollected"
       @cancel="cancelCashConfirmation"
     >
       ¿Se han cobrado <strong>{{ formatCurrency(orderToConfirm.total) }}</strong> en efectivo
