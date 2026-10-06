@@ -30,7 +30,7 @@ The application is divided into two separate repositories:
 
 ## 🚀 Quick Start
 
-> Full step-by-step guide (local HTTPS certificates, environment variables, troubleshooting) in the [Getting Started](https://github.com/FactoriaF5-Asturias/project-p5-digital-academy-team1-restaurant-frontend/wiki/Getting-Started) wiki page.
+> Full step-by-step guide (local HTTPS certificates, environment variables, troubleshooting) in the [Getting Started](https://github.com/Alexapop/F5-team-project-GitSushi-restaurant-frontend/wiki/Getting-Started) wiki page.
 
 ```bash
 # 1. Clone the repository
@@ -48,7 +48,7 @@ cp .env.example .env
 npm run dev
 ```
 
-The application runs on `https://localhost:5173` (HTTPS requires local certificates created with **mkcert** — see [Getting Started](https://github.com/FactoriaF5-Asturias/project-p5-digital-academy-team1-restaurant-frontend/wiki/Getting-Started)).
+The application runs on `https://localhost:5173` (HTTPS requires local certificates created with **mkcert** — see [Getting Started](https://github.com/Alexapop/F5-team-project-GitSushi-restaurant-frontend/wiki/Getting-Started)).
 
 > ⚠️ The backend must be running before starting the frontend. See the [backend repository](https://github.com/FactoriaF5-Asturias/project-p5-digital-academy-team1-restaurant-backend) for its setup.
 
@@ -102,7 +102,7 @@ Every route declares the roles allowed to enter it (`GUEST`, `CUSTOMER`, `COOK`,
 ## 🎨 UX/UI Design
 
 - **Prototype first:** Every view (menu, cart, checkout, login/registration, customer profile, and the kitchen, driver and admin dashboards) was designed as a mockup before development.
-- **Design system:** A single source of truth for colors, typography, spacing and radius, exposed as Tailwind utilities through `@theme` (see [Design System & UI](https://github.com/FactoriaF5-Asturias/project-p5-digital-academy-team1-restaurant-frontend/wiki/Design-System-&-UI)).
+- **Design system:** A single source of truth for colors, typography, spacing and radius, exposed as Tailwind utilities through `@theme` (see [Design System & UI](https://github.com/Alexapop/F5-team-project-GitSushi-restaurant-frontend/wiki/Design-System-&-UI)).
 - **Corporate identity:** *"Developer Gastronomy"* — a sushi restaurant with programming references (`Hello Edamame`, `Ctrl Takoyaki`...), coral primary color, `Inter` + `JetBrains Mono` typography.
 - **Responsive:** Mobile-first layouts, with a dedicated mobile navigation menu.
 - **Accessible:** Semantic HTML, labeled and validated forms, ARIA live regions for feedback, keyboard-friendly dialogs and menus.
@@ -142,16 +142,18 @@ This project is developed using **Agile methodologies** to ensure efficient deli
 
 Detailed project specifications, architectural decisions, and technical guides can be found in the Wiki:
 
-* **[Getting Started](https://github.com/FactoriaF5-Asturias/project-p5-digital-academy-team1-restaurant-frontend/wiki/Getting-Started):** Requirements, local HTTPS, installation, environment variables, dependencies and running the project locally.
-* **[Agile Management & User Stories](https://github.com/FactoriaF5-Asturias/project-p5-digital-academy-team1-restaurant-frontend/wiki/Project-Management-&-User-Stories):** Scrum workflow, sprints, team roles, Jira tracking, and frontend user stories.
-* **[Analysis and Diagrams](https://github.com/FactoriaF5-Asturias/project-p5-digital-academy-team1-restaurant-frontend/wiki/Analysis-and-Diagrams):** Roles and routes, user flows, order lifecycle and prototype screens.
-* **[Architecture](https://github.com/FactoriaF5-Asturias/project-p5-digital-academy-team1-restaurant-frontend/wiki/Architecture):** Layered structure (views, components, stores, composables, services) and folder organization.
-* **[Design System & UI](https://github.com/FactoriaF5-Asturias/project-p5-digital-academy-team1-restaurant-frontend/wiki/Design-System-&-UI):** Design tokens, typography, Tailwind configuration and naming conventions.
-* **[Accessibility & Responsive](https://github.com/FactoriaF5-Asturias/project-p5-digital-academy-team1-restaurant-frontend/wiki/Accessibility-&-Responsive):** Accessibility techniques and responsive breakpoints.
-* **[Security & Authentication](https://github.com/FactoriaF5-Asturias/project-p5-digital-academy-team1-restaurant-frontend/wiki/Security-&-Authentication):** Cookie-based session, token refresh, XSRF protection and role-based route guards.
-* **[API Integration](https://github.com/FactoriaF5-Asturias/project-p5-digital-academy-team1-restaurant-frontend/wiki/API-Integration):** Endpoints consumed by each service and data mappings.
-* **[Testing](https://github.com/FactoriaF5-Asturias/project-p5-digital-academy-team1-restaurant-frontend/wiki/Testing):** Running tests, coverage, CI and testing conventions.
-* **[Git Workflow](https://github.com/FactoriaF5-Asturias/project-p5-digital-academy-team1-restaurant-frontend/wiki/Git-Workflow):** Step-by-step fork, branch, commit and Pull Request process.
+| Page | What you will find |
+|---|---|
+| [Getting Started](https://github.com/Alexapop/F5-team-project-GitSushi-restaurant-frontend/wiki/Getting-Started) | Requirements, local HTTPS, installation, environment variables and running the app |
+| [Project Management & User Stories](https://github.com/Alexapop/F5-team-project-GitSushi-restaurant-frontend/wiki/Project-Management-&-User-Stories) | Scrum process, sprints, Jira and frontend user stories |
+| [Analysis and Diagrams](https://github.com/Alexapop/F5-team-project-GitSushi-restaurant-frontend/wiki/Analysis-and-Diagrams) | Roles and routes, user flows, order lifecycle, prototype |
+| [Architecture](https://github.com/Alexapop/F5-team-project-GitSushi-restaurant-frontend/wiki/Architecture) | Layers, data flow and folder structure |
+| [Design System & UI](https://github.com/Alexapop/F5-team-project-GitSushi-restaurant-frontend/wiki/Design-System-&-UI) | Design tokens, typography, Tailwind and naming conventions |
+| [Accessibility & Responsive](https://github.com/Alexapop/F5-team-project-GitSushi-restaurant-frontend/wiki/Accessibility-&-Responsivee) | Accessibility techniques and breakpoints |
+| [Security & Authentication](https://github.com/Alexapop/F5-team-project-GitSushi-restaurant-frontend/wiki/Security-&-Authentication) | Session cookies, token refresh, XSRF and route guards |
+| [API Integration](https://github.com/Alexapop/F5-team-project-GitSushi-restaurant-frontend/wiki/API-Integration) | Endpoints consumed by each service and data mappings |
+| [Testing](https://github.com/Alexapop/F5-team-project-GitSushi-restaurant-frontend/wiki/Testing) | Running tests, coverage, CI and conventions |
+| [Git Workflow](https://github.com/Alexapop/F5-team-project-GitSushi-restaurant-frontend/wiki/Git-Workflow) | Fork, branches, commits and Pull Requests |
 
 
 
